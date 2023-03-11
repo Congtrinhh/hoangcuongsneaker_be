@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Dl\\HoangCuongSneaker.Repository.csproj": {}
+  },
+  "projects": {
+    "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj",
+        "projectName": "HoangCuongSneaker.Core",
+        "projectPath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj",
+        "packagesPath": "C:\\Users\\trinh\\.nuget\\packages\\",
+        "outputPath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\trinh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "AutoMapper": {
+              "target": "Package",
+              "version": "[12.0.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.300\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Dl\\HoangCuongSneaker.Repository.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Dl\\HoangCuongSneaker.Repository.csproj",
+        "projectName": "HoangCuongSneaker.Repository",
+        "projectPath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Dl\\HoangCuongSneaker.Repository.csproj",
+        "packagesPath": "C:\\Users\\trinh\\.nuget\\packages\\",
+        "outputPath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Dl\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\trinh\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {
+              "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj": {
+                "projectPath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Dapper": {
+              "target": "Package",
+              "version": "[2.0.123, )"
+            },
+            "Microsoft.Extensions.Configuration.Abstractions": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            },
+            "MySqlConnector": {
+              "target": "Package",
+              "version": "[2.2.5, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.300\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

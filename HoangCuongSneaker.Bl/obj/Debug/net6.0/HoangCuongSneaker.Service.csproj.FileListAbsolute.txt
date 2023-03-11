@@ -1,0 +1,17 @@
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.csproj.AssemblyReference.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.GeneratedMSBuildEditorConfig.editorconfig
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.AssemblyInfoInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.AssemblyInfo.cs
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.csproj.CoreCompileInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Service.deps.json
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Service.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Service.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Core.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Repository.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Core.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\bin\Debug\net6.0\HoangCuongSneaker.Repository.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.csproj.CopyComplete
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\refint\HoangCuongSneaker.Service.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\HoangCuongSneaker.Service.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Bl\obj\Debug\net6.0\ref\HoangCuongSneaker.Service.dll

@@ -1,0 +1,12 @@
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\bin\Debug\net6.0\HoangCuongSneaker.Core.deps.json
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\bin\Debug\net6.0\HoangCuongSneaker.Core.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\bin\Debug\net6.0\HoangCuongSneaker.Core.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.csproj.AssemblyReference.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.AssemblyInfoInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.AssemblyInfo.cs
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.csproj.CoreCompileInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\refint\HoangCuongSneaker.Core.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\HoangCuongSneaker.Core.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Core\obj\Debug\net6.0\ref\HoangCuongSneaker.Core.dll

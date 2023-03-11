@@ -1,0 +1,15 @@
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\bin\Debug\net6.0\HoangCuongSneaker.Repository.deps.json
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\bin\Debug\net6.0\HoangCuongSneaker.Repository.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\bin\Debug\net6.0\HoangCuongSneaker.Repository.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\bin\Debug\net6.0\HoangCuongSneaker.Core.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\bin\Debug\net6.0\HoangCuongSneaker.Core.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.csproj.AssemblyReference.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.GeneratedMSBuildEditorConfig.editorconfig
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.AssemblyInfoInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.AssemblyInfo.cs
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.csproj.CoreCompileInputs.cache
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.csproj.CopyComplete
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\refint\HoangCuongSneaker.Repository.dll
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\HoangCuongSneaker.Repository.pdb
+D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker.Dl\obj\Debug\net6.0\ref\HoangCuongSneaker.Repository.dll

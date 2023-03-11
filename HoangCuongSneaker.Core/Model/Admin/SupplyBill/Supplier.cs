@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HoangCuongSneaker.Core.Model.Admin.SupplyBill
+{
+    /// <summary>
+    /// Nhà cung cấp
+    /// </summary>
+    public class Supplier : BaseModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+
+    }
+}

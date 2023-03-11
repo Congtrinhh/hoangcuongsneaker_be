@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "3/mtw1Fzl54582uGGjlWGjX6vIYLiznvWqn7eVlHxwp0+DyhDHMANA0F1kDP/568v8beVTl36yq8/OIP5AZOxw==",
+  "success": true,
+  "projectFilePath": "D:\\___Đồ án\\hoang-cuong-sneaker-project\\HoangCuongSneaker\\HoangCuongSneaker.Core\\HoangCuongSneaker.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\trinh\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
+    "C:\\Users\\trinh\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
+  ],
+  "logs": []
+}

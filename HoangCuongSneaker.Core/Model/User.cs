@@ -9,7 +9,6 @@ namespace HoangCuongSneaker.Core.Model
 {
     public class User : BaseModel
     {
-        // TODO: fix loi sau
         public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;

@@ -15,8 +15,4 @@
     <ProjectReference Include="..\HoangCuongSneaker.Dl\HoangCuongSneaker.Repository.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\User\" />
-  </ItemGroup>
-
 </Project>

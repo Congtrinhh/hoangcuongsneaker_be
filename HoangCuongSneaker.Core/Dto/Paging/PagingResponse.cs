@@ -1,4 +1,5 @@
-﻿using HoangCuongSneaker.Core.Model;
+﻿using HoangCuongSneaker.Core.Dto.Paging;
+using HoangCuongSneaker.Core.Model;
 
 namespace HoangCuongSneaker.Core
 {

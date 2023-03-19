@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using HoangCuongSneaker.Core.Model;
+using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Core.Model.Admin.Product;
 
 namespace HoangCuongSneaker.Core.Utility
@@ -18,7 +19,13 @@ namespace HoangCuongSneaker.Core.Utility
             {
                 //Configuring Employee and EmployeeDTO
                 cfg.CreateMap<Product, ProductDto>();
-                //.ForMember(dest => dest.Dept, act => act.MapFrom(src => src.Department));
+                cfg.CreateMap<ProductDto, Product>();
+
+                cfg.CreateMap<User, UserDto>();
+                cfg.CreateMap<UserDto, User>();
+
+                cfg.CreateMap<Order, OrderDto>();
+
             });
 
             var mapper = new Mapper(config);

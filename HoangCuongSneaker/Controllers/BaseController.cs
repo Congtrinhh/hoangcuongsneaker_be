@@ -53,7 +53,7 @@ namespace HoangCuongSneaker.Api.Controllers
         }
 
         [HttpPost("paging")]
-        public async Task<ApiResponse> GetPaging(PagingRequest pagingRequest)
+        public virtual async Task<ApiResponse> GetPaging(PagingRequest pagingRequest)
         {
             var response = new ApiResponse();
             try

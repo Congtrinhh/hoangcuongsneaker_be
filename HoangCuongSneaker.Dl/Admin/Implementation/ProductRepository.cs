@@ -26,6 +26,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             using (var conn = new MySqlConnection(_connectionString))
             {
                 conn.Open();
+                var trans = conn.BeginTransaction();
                 var procInsertProduct = "proc_product_insert";
 
                 // mapper.map => productDto => product to store in the db
@@ -56,17 +57,20 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         var affectedRow = await conn.ExecuteAsync(sql: procInsertProductInventory, commandType: System.Data.CommandType.StoredProcedure, param: insertedProduct.ProductInventories[i]);
                         if (affectedRow == 1)
                         {
-                            insertedProductInventoryCount++;
+                            insertedProductInventoryCount++; 
                         }
                     }
                     if (insertedProductInventoryCount != insertedProduct.ProductInventories.Count)
                     {
                         // rollback
+                        trans.Rollback();
                     }
+                    //trans.Commit();
                 }
                 else
                 {
                     // roll back
+                    trans.Rollback();
                 }
 
                 return insertedProduct;

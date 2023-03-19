@@ -7,9 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HoangCuongSneaker.Api.Controllers.Admin
 {
-    public class ProductsController : BaseController<ProductDto>
+    public class AdminProductsController : BaseController<ProductDto>
     {
-        public ProductsController(IProductRepository productRepository) : base(productRepository)
+        public AdminProductsController(IProductRepository productRepository) : base(productRepository)
         {
         }
     }

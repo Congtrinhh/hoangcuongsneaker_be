@@ -23,7 +23,11 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         {
             get
             {
-                var v =  ProductInventories.FirstOrDefault().SellPrice;
+                decimal v = 0;
+                if (ProductInventories.FirstOrDefault() is not null)
+                {
+                    v = ProductInventories.FirstOrDefault().SellPrice;
+                }
                 return v;
             }
             set { price = value; }

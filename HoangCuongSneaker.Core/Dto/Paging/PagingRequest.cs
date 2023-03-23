@@ -6,10 +6,34 @@ using System.Threading.Tasks;
 
 namespace HoangCuongSneaker.Core.Dto.Paging
 {
-    public class PagingRequest
+    public abstract class PagingRequest
     {
-        public int PageSize { get; set; } = 20;
-        public int PageIndex { get; set; } = 0;
+        private int pageSize;
+        public int PageSize
+        {
+            get
+            {
+                return pageSize;
+            }
+            set
+            {
+                if (value <= 0) pageSize = 15;
+                else pageSize = value;
+            }
+        }
+        private int pageIndex;
+        public int PageIndex
+        {
+            get
+            {
+                return pageIndex;
+            }
+            set
+            {
+                if (value < 0) pageIndex = 0;
+                else pageIndex = value;
+            }
+        }
 
     }
 }

@@ -13,7 +13,7 @@ namespace HoangCuongSneaker.Api.Controllers
     [ApiController]
     public class BaseController<T> : ControllerBase where T : BaseModel
     {
-        private readonly IBaseRepository<T> _baseRepository;
+        protected readonly IBaseRepository<T> _baseRepository;
         public BaseController(IBaseRepository<T> baseRepository)
         {
             _baseRepository = baseRepository;
@@ -52,26 +52,26 @@ namespace HoangCuongSneaker.Api.Controllers
             return response;
         }
 
-        [HttpPost("paging")]
-        public virtual async Task<ApiResponse> GetPaging(PagingRequest pagingRequest)
-        {
-            var response = new ApiResponse();
-            try
-            {
-                PagingResponse<T> pagingResponse = await _baseRepository.GetPaging(pagingRequest);
-                response.OnSuccess(data: pagingResponse);
-            }
-            catch (Exception e)
-            {
-                response.OnFailure(e);
-            }
-            return response;
+        //[HttpPost("paging")]
+        //public virtual async Task<ApiResponse> GetPaging(object pagingRequest)// giả sử param truyền lên luôn đúng.
+        //{
+        //    var response = new ApiResponse();
+        //    try
+        //    {
+        //        PagingResponse<T> pagingResponse = await _baseRepository.GetPaging(pagingRequest as PagingRequest);
+        //        response.OnSuccess(data: pagingResponse);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        response.OnFailure(e);
+        //    }
+        //    return response;
 
-        } 
+        //} 
 
         // POST api/<BaseController>
         [HttpPost]
-        public async Task<ApiResponse> Create([FromBody] T model)
+        public virtual async Task<ApiResponse> Create([FromBody] T model)
         {
             var response = new ApiResponse();
             try

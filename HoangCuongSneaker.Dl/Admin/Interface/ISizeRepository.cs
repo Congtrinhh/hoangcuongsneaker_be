@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HoangCuongSneaker.Repository.Admin.Interface
 {
-    public interface IImageRepository:IBaseRepository<Image>
+    public interface ISizeRepository:IBaseRepository<Size>
     {
     }
 }

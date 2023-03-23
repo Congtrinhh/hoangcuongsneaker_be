@@ -12,8 +12,6 @@ namespace HoangCuongSneaker.Core.Dto.Paging.Admin
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = false;
-        // mảng chứa điều kiện để sắp xếp dữ liệu
-        public List<Sort> Sorts { get; set; } = new List<Sort>();
+        public bool IsActive { get; set; } = false; 
     }
 }

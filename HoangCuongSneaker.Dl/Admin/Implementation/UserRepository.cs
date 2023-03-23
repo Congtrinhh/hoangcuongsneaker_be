@@ -140,12 +140,12 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 }
 
 
-                sql += " order by ";
-                userPagingRequest.Sorts.ForEach(sort =>
-                {
-                    sql += $" {sort.Field} {sort.SortDirection},";
-                });
-                sql.Remove(sql.Length - 1); // bo dau phay cuoi
+                //sql += " order by ";
+                //userPagingRequest.Sorts.ForEach(sort =>
+                //{
+                //    sql += $" {sort.Field} {sort.SortDirection},";
+                //});
+                //sql.Remove(sql.Length - 1); // bo dau phay cuoi
             }
 
 

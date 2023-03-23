@@ -9,7 +9,7 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
     /// <summary>
     /// 1 sp trả về client
     /// </summary>
-    public class ProductDto:BaseModel
+    public class ProductDto : BaseModel
     {
         // mapper
         // luu y - data table con thieu: bang product
@@ -18,8 +18,17 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         /// <summary>
         /// bằng giá của phần tử đầu tiên từ list product inventory
         /// </summary>
-        public decimal Price { get; set; }
-        public List<ProductInventory> ProductInventories { get; set; } = new List<ProductInventory>();
+        private decimal price;
+        public decimal Price
+        {
+            get
+            {
+                var v =  ProductInventories.FirstOrDefault().SellPrice;
+                return v;
+            }
+            set { price = value; }
+        }
+        public List<ProductInventoryDto> ProductInventories { get; set; } = new List<ProductInventoryDto>();
         public List<Image> Images { get; set; } = new List<Image>();
         public string Slug { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

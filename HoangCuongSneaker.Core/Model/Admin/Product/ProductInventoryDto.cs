@@ -5,15 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HoangCuongSneaker.Core.Model
+namespace HoangCuongSneaker.Core.Model.Admin.Product
 {
-    // Class Kho sản phẩm
-    public class ProductInventory : BaseModel
+    public class ProductInventoryDto : BaseModel
     {
-        /// <summary>
-        /// mã duy nhất phân biệt các sản phẩm với nhau.
-        /// vẫn cần dùng thêm id để dùng base crud
-        /// </summary>
         public int Sku { get; set; }
         public string Name { get; set; } = string.Empty;
         // giá bán do nhà cung cấp đề xuất
@@ -24,7 +19,21 @@ namespace HoangCuongSneaker.Core.Model
         public int Quantity { get; set; }
         public GenderEnum Gender { get; set; }
         public int ProductId { get; set; }
-        public int SizeId { get; set; }
-        public int ColorId { get; set; }
+        public Size Size { get; set; }
+        public Color Color { get; set; }
+
+        private decimal discount;
+        public decimal Discount
+        {
+            get {
+                decimal discountPercent = (decimal)1.0 * SellPrice / RrPrice;
+                if (discountPercent<1)
+                {
+                    return discountPercent;
+                }
+                return 0;
+            }
+            set { discount = value; }
+        }
     }
 }

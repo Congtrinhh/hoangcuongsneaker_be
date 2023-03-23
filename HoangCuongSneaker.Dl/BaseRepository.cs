@@ -32,7 +32,12 @@ namespace HoangCuongSneaker.Repository
 
         virtual public async Task<T> Create(T model)
         {
-            throw new NotImplementedException();
+            using (var conn = new MySqlConnection(_connectionString))
+            {
+                string procInsert = $"proc_{_tableName}_insert"; 
+                var res = await conn.ExecuteScalarAsync<T>(sql: procInsert, commandType: System.Data.CommandType.StoredProcedure, param: model);
+                return res;
+            }
         }
 
         virtual public async Task<int> Delete(int id)
@@ -58,12 +63,12 @@ namespace HoangCuongSneaker.Repository
             }
         }
 
-        virtual public async Task<PagingResponse<T>> GetPaging(PagingRequest pagingRequest)
+        public virtual async Task<PagingResponse<T>> GetPaging(PagingRequest pagingRequest)
         {
             throw new NotImplementedException();
         }
 
-        private string BuildSelectStatement(PagingRequest pagingRequest)
+        protected virtual string BuildSelectStatement(PagingRequest pagingRequest)
         {
 
             var sql = $"select * from {_tableName} where 1=1"; 

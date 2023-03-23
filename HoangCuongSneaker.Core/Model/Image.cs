@@ -8,9 +8,9 @@ namespace HoangCuongSneaker.Core.Model
 {
     public class Image:BaseModel
     {
-        public int ProductInventoryId { get; set; }
+        public int ProductId { get; set; }
         // chứa dữ liệu thực sự của ảnh để hiển thị lên giao diện
-        public object Content { get; set; }
+        public byte[] Content { get; set; }
         public string Desc { get; set; }
     }
 }

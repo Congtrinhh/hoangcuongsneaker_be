@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace HoangCuongSneaker.Repository.Admin.Interface
 {
     public interface IProductRepository:IBaseRepository<ProductDto>
-    { 
+    {
+        Task<ProductDto> GetBySlug(string slug);
     }
 }

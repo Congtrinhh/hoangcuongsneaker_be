@@ -8,7 +8,7 @@ namespace HoangCuongSneaker.Core.Model
 {
     public class Color : BaseModel
     {
-        public string Value { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public string Desc { get; set; } = string.Empty;
     }
 }

@@ -12,13 +12,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 using HoangCuongSneaker.Core.Utility;
+using HoangCuongSneaker.Core.Dto.Paging.Admin;
 
 namespace HoangCuongSneaker.Repository.Admin.Implementation
 {
     public class ProductRepository : BaseRepository<ProductDto>, IProductRepository
     {
-        public ProductRepository(IConfiguration configuration) : base(configuration)
+        protected ISizeRepository _sizeRepository;
+        protected IColorRepository _colorRepository;
+        public ProductRepository(IConfiguration configuration, ISizeRepository sizeRepository, IColorRepository colorRepository) : base(configuration)
         {
+            _sizeRepository = sizeRepository;
+            _colorRepository = colorRepository;
         }
 
         public override async Task<ProductDto> Create(ProductDto model)
@@ -112,11 +117,19 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     var brandId = product.BrandId;
                     var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
 
-                    // mapper.map product => productDto
-                    var mapper = MapperUtil.Initialize();
-                    var modelResult = mapper.Map<ProductDto>(product);
+                    var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
+                    {
+                        var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                        var size = await _sizeRepository.Get(productInventory.SizeId);
+                        var color = await _colorRepository.Get(productInventory.ColorId);
+                        tmpProductInventory.Size = size;
+                        tmpProductInventory.Color = color;
+                        return tmpProductInventory;
+                    }));
+                     
+                    var modelResult = _mapper.Map<ProductDto>(product);
                     modelResult.Brand = brand;
-                    modelResult.ProductInventories = productInventories;
+                    modelResult.ProductInventories = productInventoryDtos.ToList();
                     modelResult.Images = images;
 
                     return modelResult;
@@ -153,14 +166,22 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         var brandId = product.BrandId;
                         var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
 
-                        // mapper.map product => productDto
-                        var mapper = MapperUtil.Initialize();
-                        var modelResult = mapper.Map<ProductDto>(product);
+                        var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
+                        {
+                            var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                            var size = await _sizeRepository.Get(productInventory.SizeId);
+                            var color = await _colorRepository.Get(productInventory.ColorId);
+                            tmpProductInventory.Size = size;
+                            tmpProductInventory.Color = color;
+                            return tmpProductInventory;
+                        }));
+                         
+                        var modelResult = _mapper.Map<ProductDto>(product);
                         modelResult.Brand = brand;
-                        modelResult.ProductInventories = productInventories;
+                        modelResult.ProductInventories = productInventoryDtos.ToList();
                         modelResult.Images = images;
 
-                        productsResult.Add( modelResult);
+                        productsResult.Add(modelResult);
 
                     }
                     return productsResult;
@@ -169,10 +190,123 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override Task<PagingResponse<ProductDto>> GetPaging(PagingRequest pagingRequest)
+        public async Task<ProductDto> GetBySlug(string slug)
+        {
+            using (var conn = new MySqlConnection(_connectionString))
+            {
+                conn.Open();
+
+                var sql = "select * from product where slug=@slug";
+
+
+                var product = await conn.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @slug = slug });
+                if (product != null)
+                {
+                    var sqlProductInventories = "select * from product_inventory where product_id = @productId";
+                    var sqlImages = "select * from image where product_id = @productId";
+
+                    var productId = product.Id;
+                    var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                    var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+
+                    var sqlBrand = "select * from brand where id = @brandId";
+                    var brandId = product.BrandId;
+                    var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
+
+
+                    var productInventoryDtos = await Task.WhenAll( productInventories.Select(async (productInventory) =>
+                    {
+                        var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                        var size = await _sizeRepository.Get(productInventory.SizeId);
+                        var color = await _colorRepository.Get(productInventory.ColorId);
+                        tmpProductInventory.Size = size;
+                        tmpProductInventory.Color = color;
+                        return tmpProductInventory;
+                    }));
+                     
+                    var modelResult = _mapper.Map<ProductDto>(product);
+                    modelResult.Brand = brand;
+                    modelResult.ProductInventories = productInventoryDtos.ToList();
+                    modelResult.Images = images;
+
+                    return modelResult;
+                }
+                return new ProductDto();
+            }
+        }
+
+        public override async Task<PagingResponse<ProductDto>> GetPaging(PagingRequest pagingRequest)
         {
 
-            return base.GetPaging(pagingRequest);
+            using (var conn = new MySqlConnection(_connectionString))
+            {
+                conn.Open(); 
+
+                var sql  = BuildSelectStatement(pagingRequest);
+
+
+                var products = (await conn.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
+                if (products.Count > 0)
+                {
+                    var productsResult = new List<ProductDto>();
+                    for (int i = 0; i < products.Count; i++)
+                    {
+                        var product = products.ElementAt(i);
+                        var sqlProductInventories = "select * from product_inventory where product_id = @productId";
+                        var sqlImages = "select * from image where product_id = @productId";
+
+                        var productId = product.Id;
+                        var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                        var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+
+                        var sqlBrand = "select * from brand where id = @brandId";
+                        var brandId = product.BrandId;
+                        var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
+
+                        var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
+                        {
+                            var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                            var size = await _sizeRepository.Get(productInventory.SizeId);
+                            var color = await _colorRepository.Get(productInventory.ColorId);
+                            tmpProductInventory.Size = size;
+                            tmpProductInventory.Color = color;
+                            return tmpProductInventory;
+                        }));
+
+                        var modelResult = _mapper.Map<ProductDto>(product);
+                        modelResult.Brand = brand;
+                        modelResult.ProductInventories = productInventoryDtos.ToList();
+                        modelResult.Images = images;
+
+                        productsResult.Add(modelResult);
+
+                    }
+                    var pagingResponse = new PagingResponse<ProductDto>();
+                    pagingResponse.Items = productsResult;
+                    return pagingResponse;
+                }
+                return new PagingResponse<ProductDto>();
+            }
+        }
+
+        protected override string BuildSelectStatement(PagingRequest pagingRequest)
+        {
+            var tableName = _tableName.EndsWith("Dto") ? _tableName.Replace("Dto", "") : _tableName;
+            var sql = $"select * from {tableName} where 1=1";
+
+            if (pagingRequest is ProductPagingRequest productPagingRequest)
+            {
+                if (!string.IsNullOrEmpty( productPagingRequest.Name))
+                {
+                    sql += $" and name like '%{productPagingRequest.Name}%'";
+                }
+            }
+
+            int limit = pagingRequest.PageSize;
+            int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
+            sql += $" limit {limit} offset {offset}";
+
+            return sql;
         }
 
         public async override Task<ProductDto> Update(ProductDto model)
@@ -198,5 +332,9 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
             return null;
         }
+
+        
+
+        
     }
 }

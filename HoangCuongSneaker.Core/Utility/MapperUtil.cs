@@ -26,6 +26,9 @@ namespace HoangCuongSneaker.Core.Utility
 
                 cfg.CreateMap<Order, OrderDto>();
 
+                cfg.CreateMap<ProductInventory, ProductInventoryDto>();
+                cfg.CreateMap<ProductInventoryDto, ProductInventory>();
+
             });
 
             var mapper = new Mapper(config);

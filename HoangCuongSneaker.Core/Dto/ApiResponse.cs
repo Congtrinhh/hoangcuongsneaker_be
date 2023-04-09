@@ -1,5 +1,4 @@
-﻿using HoangCuongSneaker.Core.Model;
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 
 namespace HoangCuongSneaker.Core.Dto
@@ -38,13 +37,11 @@ namespace HoangCuongSneaker.Core.Dto
         /// trả về Data dạng list
         /// </summary>
         /// <param name="data"></param>
-        public void OnSuccess(object data)
+        public void OnSuccess(object? data)
         {
             Time = DateTime.Now;
             if (data is not null && data is IList)
             {
-                //Data = (List<object>)data;
-
                 Data = ((IEnumerable)data).Cast<object>().ToList();
             }
             else if(data is not null)

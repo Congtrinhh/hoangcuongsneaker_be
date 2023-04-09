@@ -21,7 +21,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         {
         }
 
-        public override async Task<UserDto> Get(int id)
+        public override async Task<UserDto> Get(int id, MySqlConnection connection = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -42,7 +42,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<int> Delete(int id)
+        public override async Task<int> Delete(int id, MySqlConnection connection = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -55,7 +55,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<UserDto> Create(UserDto model)
+        public override async Task<UserDto> Create(UserDto model, MySqlConnection connection = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -76,7 +76,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<UserDto> Update(UserDto model)
+        public override async Task<UserDto> Update(UserDto model, MySqlConnection connection = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -87,7 +87,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 var user = _mapper.Map<User>(model);
 
                 var updatedUserId = await conn.ExecuteScalarAsync<int>(sql: procUserUpdate, commandType: System.Data.CommandType.StoredProcedure, param: user);
-                if (updatedUserId> 0)
+                if (updatedUserId > 0)
                 {
                     var updatedUser = await Get(updatedUserId);
                     var modelResult = _mapper.Map<UserDto>(updatedUser);
@@ -98,14 +98,14 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<PagingResponse<UserDto>> GetPaging(PagingRequest pagingRequest)
+        public async Task<PagingResponse<UserDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
-                conn.Open(); 
-                
+                conn.Open();
+
                 // build sql
-                var sql = BuildSelectStatement(pagingRequest);
+                var sql = GetSqlGetPaging(pagingRequest);
 
                 var users = await conn.QueryAsync<User>(sql: sql, commandType: System.Data.CommandType.Text);
 
@@ -119,7 +119,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        protected override string BuildSelectStatement(PagingRequest pagingRequest)
+        protected override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
 
             var sql = "select * from user where 1=1";
@@ -157,6 +157,27 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             return sql;
         }
 
+        public Task<UserDto> GetByUserName(string userName)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<UserDto> GetByUserName(string userName, MySqlConnection connection = null)
+        {
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
 
+            var sql = "select * from user where user_name=@userName";
+
+            var user = await connection.QueryFirstOrDefaultAsync<User>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @userName = userName });
+            if (user is not null && user.Id > 0)
+            {
+                var modelResult = _mapper.Map<UserDto>(user);
+                return modelResult;
+            }
+            else
+            {
+                return new UserDto();
+            }
+        }
     }
 }

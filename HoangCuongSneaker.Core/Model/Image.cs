@@ -11,6 +11,6 @@ namespace HoangCuongSneaker.Core.Model
         public int ProductId { get; set; }
         // chứa dữ liệu thực sự của ảnh để hiển thị lên giao diện
         public byte[] Content { get; set; }
-        public string Desc { get; set; }
+        public string? Desc { get; set; }
     }
 }

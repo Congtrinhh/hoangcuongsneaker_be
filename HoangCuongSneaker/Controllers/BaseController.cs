@@ -42,7 +42,7 @@ namespace HoangCuongSneaker.Api.Controllers
             var response = new ApiResponse();
             try
             {
-                T model = await _baseRepository.Get(id);
+                T? model = await _baseRepository.Get(id);
                 response.OnSuccess(data: model);
             }
             catch (Exception e)
@@ -76,7 +76,7 @@ namespace HoangCuongSneaker.Api.Controllers
             var response = new ApiResponse();
             try
             {
-                T createdModel = await _baseRepository.Create(model);
+                T? createdModel = await _baseRepository.Create(model);
                 response.OnSuccess(data: model);
             }
             catch (Exception e)
@@ -93,7 +93,8 @@ namespace HoangCuongSneaker.Api.Controllers
             var response = new ApiResponse();
             try
             {
-                T updatedModel = await _baseRepository.Update(model);
+                model.Id = id;
+                T? updatedModel = await _baseRepository.Update(model);
                 response.OnSuccess(data: updatedModel);
             }
             catch (Exception e)

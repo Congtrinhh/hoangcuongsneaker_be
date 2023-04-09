@@ -15,7 +15,7 @@ namespace HoangCuongSneaker.Core.Model.Admin.SupplyBill
         public int SupplyBillId { get; set; }
         public int Quantity { get; set; }
         public decimal Price { get; set; }
-        public decimal Discount { get; set; }
+        public decimal? Discount { get; set; }
 
     }
 }

@@ -10,12 +10,28 @@ namespace HoangCuongSneaker.Core.Model.Admin.Order
     public class OrderDto:BaseModel
     {
         public UserDto User { get; set; } = new UserDto();
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; } = true;
         // mã code để làm mã đơn hàng cho khách 
-        public string Code { get; set; } = string.Empty;
-        public ShippingStatusEnum ShippingStatus { get; set; }
-        public DateTime ShippedAt { get; set; }
+        public string? Code { get; set; } = DateTime.Now.Millisecond.ToString();
+        public ShippingStatusEnum? ShippingStatus { get; set; } = ShippingStatusEnum.PendingAccept;
+        public DateTime? ShippedAt { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
-        public decimal BillPrice { get; set; }
+        private decimal? billPrice;
+        public decimal? BillPrice
+        {
+            get
+            {
+                decimal total = 0;
+                OrderItems.ForEach(item =>
+                {
+                    total += item.Quantity * item.Price;
+                });
+                return total;
+            }
+            set
+            {
+                billPrice = value;
+            }
+        }
     }
 }

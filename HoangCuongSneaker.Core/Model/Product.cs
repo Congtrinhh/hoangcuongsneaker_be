@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HoangCuongSneaker.Core.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,8 +13,21 @@ namespace HoangCuongSneaker.Core.Model
     public class Product:BaseModel
     {
         public string Name { get; set; } = string.Empty;
-        public string Slug { get; set; } = string.Empty ;
+        private string? slug;
+        public string Slug
+        {
+            get {
+                var str = string.Empty;
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    str = FunctionUtil.Slugify(Name);
+                }
+                return str;
+            }
+            set { slug = value; }
+        }
         public int BrandId { get; set; }
-        public bool IsActive { get; set; } = true;
+        public bool? IsActive { get; set; } = true;
+        public string? Description { get; set; }
     }
 }

@@ -10,11 +10,11 @@ namespace HoangCuongSneaker.Core.Model
     public class Order:BaseModel
     {
         public int UserId { get; set; }
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; } = true;
         // mã code để làm mã đơn hàng cho khách 
         public string Code { get; set; } = string.Empty;
         public ShippingStatusEnum ShippingStatus { get; set; }
-        public DateTime ShippedAt { get; set; }
+        public DateTime? ShippedAt { get; set; }
         public decimal BillPrice { get; set; }
     }
 }

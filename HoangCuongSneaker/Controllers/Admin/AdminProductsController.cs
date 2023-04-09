@@ -15,10 +15,12 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
 {
     public class AdminProductsController : BaseController<ProductDto>
     {
-        private IImageRepository _imageRepository;
+        protected IImageRepository _imageRepository;
+        protected IProductRepository _productRepository;
         public AdminProductsController(IProductRepository productRepository, IImageRepository imageRepository) : base(productRepository)
         {
             _imageRepository = imageRepository;
+            _productRepository = productRepository;
         }
 
         [HttpPost]
@@ -68,7 +70,7 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
             var response = new ApiResponse();
             try
             {
-                PagingResponse<ProductDto> pagingResponse = await _baseRepository.GetPaging(pagingRequest);
+                PagingResponse<ProductDto> pagingResponse = await _productRepository.GetPaging(pagingRequest);
                 response.OnSuccess(data: pagingResponse);
             }
             catch (Exception e)

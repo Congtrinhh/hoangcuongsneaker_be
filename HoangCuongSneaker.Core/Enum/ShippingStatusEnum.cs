@@ -8,8 +8,10 @@ namespace HoangCuongSneaker.Core.Enum
 {
     public enum ShippingStatusEnum
     {
+        /// đơn hàng chờ tiếp nhận
+        PendingAccept = 1,
         // đơn hàng đã được tiếp nhận
-        OrderAccepted = 1,
+        Accepted = 1,
         // đang giao
         Delivering = 2,
         // đã giao

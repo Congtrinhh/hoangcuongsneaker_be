@@ -20,102 +20,155 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
     {
         protected ISizeRepository _sizeRepository;
         protected IColorRepository _colorRepository;
-        public ProductRepository(IConfiguration configuration, ISizeRepository sizeRepository, IColorRepository colorRepository) : base(configuration)
+        protected IImageRepository _imageRepository;
+        protected IProductInventoryRepository _productInventoryRepository;
+        public ProductRepository(IConfiguration configuration, ISizeRepository sizeRepository, IColorRepository colorRepository, IImageRepository imageRepository, IProductInventoryRepository productInventoryRepository) : base(configuration)
         {
             _sizeRepository = sizeRepository;
             _colorRepository = colorRepository;
+            _imageRepository = imageRepository;
+            _productInventoryRepository = productInventoryRepository;
         }
 
-        public override async Task<ProductDto> Create(ProductDto model)
+        public override async Task<ProductDto?> Create(ProductDto model, MySqlConnection connection = null)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
+            var trans = connection.BeginTransaction();
+            var procInsertProduct = "proc_product_insert";
+
+            var productToInsert = _mapper.Map<Product>(model);
+            var insertedProductId = await connection.ExecuteScalarAsync<int>(sql: procInsertProduct, commandType: System.Data.CommandType.StoredProcedure, param: productToInsert, transaction: trans);
+
+            if (insertedProductId > 0)
             {
-                conn.Open();
-                var trans = conn.BeginTransaction();
-                var procInsertProduct = "proc_product_insert";
+                // luu image, product inventory
+                var procInsertImage = "proc_image_insert";
+                var procInsertProductInventory = "proc_product_inventory_insert";
+                int insertedImageCount = 0, insertedProductInventoryCount = 0;
 
-                // mapper.map => productDto => product to store in the db
-
-                var insertedProduct = await conn.ExecuteScalarAsync<ProductDto>(sql: procInsertProduct, commandType: System.Data.CommandType.StoredProcedure, param: model);
-
-                if (insertedProduct != null)
+                for (int i = 0; i < model.Images.Count; i++)
                 {
-                    // luu image, product inventory
-                    var procInsertImage = "proc_image_insert";
-                    var procInsertProductInventory = "proc_product_inventory_insert";
-                    int insertedImageCount = 0, insertedProductInventoryCount = 0;
-                    // using transaction
-                    for (int i = 0; i < insertedProduct.Images.Count; i++)
+                    var affectedRow = await connection.ExecuteAsync(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: model.Images[i], transaction: trans);
+                    if (affectedRow == 1)
                     {
-                        var affectedRow = await conn.ExecuteAsync(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: insertedProduct.Images[i]);
-                        if (affectedRow == 1)
-                        {
-                            insertedImageCount++;
-                        }
+                        insertedImageCount++;
                     }
-                    if (insertedImageCount != insertedProduct.Images.Count)
-                    {
-                        // rollback
-                    }
-                    for (int i = 0; i < insertedProduct.ProductInventories.Count; i++)
-                    {
-                        var affectedRow = await conn.ExecuteAsync(sql: procInsertProductInventory, commandType: System.Data.CommandType.StoredProcedure, param: insertedProduct.ProductInventories[i]);
-                        if (affectedRow == 1)
-                        {
-                            insertedProductInventoryCount++; 
-                        }
-                    }
-                    if (insertedProductInventoryCount != insertedProduct.ProductInventories.Count)
-                    {
-                        // rollback
-                        trans.Rollback();
-                    }
-                    //trans.Commit();
                 }
-                else
+                if (insertedImageCount != model.Images.Count)
                 {
-                    // roll back
                     trans.Rollback();
+                    return null;
                 }
 
-                return insertedProduct;
-            }
-        }
-
-        public async override Task<int> Delete(int id)
-        {
-            using (var conn = new MySqlConnection(_connectionString))
-            {
-                conn.Open();
-
-                var sql = "update product set is_active = false where id=@id";
-                var affectedRow = await conn.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
-                return affectedRow;
-            }
-        }
-
-        public override async Task<ProductDto> Get(int id)
-        {
-            using (var conn = new MySqlConnection(_connectionString))
-            {
-                conn.Open();
-
-                var sql = "select * from product where id=@id";
-
-
-                var product = await conn.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
-                if (product != null)
+                for (int i = 0; i < model.ProductInventories.Count; i++)
                 {
+                    var affectedRow = await connection.ExecuteAsync(sql: procInsertProductInventory, commandType: System.Data.CommandType.StoredProcedure, param: model.ProductInventories[i], transaction: trans);
+                    if (affectedRow == 1)
+                    {
+                        insertedProductInventoryCount++;
+                    }
+                }
+                if (insertedProductInventoryCount != model.ProductInventories.Count)
+                {
+                    trans.Rollback();
+                    return null;
+                }
+                trans.Commit();
+            }
+            else
+            {
+                trans.Rollback();
+                return null;
+            }
+
+            // lấy ra sản phẩm vừa đc insert vào db và trả về client
+            var newlyInsertedProduct = await Get(insertedProductId);
+            newlyInsertedProduct.Images = model.Images;
+            newlyInsertedProduct.ProductInventories = model.ProductInventories;
+            return newlyInsertedProduct;
+        }
+
+        public async override Task<int> Delete(int id, MySqlConnection connection = null)
+        {
+            connection = connection ?? GetSqlConnection();
+
+            connection.Open();
+
+            var sql = "update product set is_active = false where id=@id";
+            var affectedRow = await connection.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
+            return affectedRow;
+        }
+
+        public override async Task<ProductDto> Get(int id, MySqlConnection connection = null)
+        {
+            connection = connection ?? GetSqlConnection();
+
+            connection.Open();
+
+            var sql = "select * from product where id=@id";
+
+
+            var product = await connection.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
+            if (product != null)
+            {
+                var sqlProductInventories = "select * from product_inventory where product_id = @productId";
+                var sqlImages = "select * from image where product_id = @productId";
+
+                var productId = product.Id;
+                var productInventories = (await connection.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                var images = (await connection.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+
+                var sqlBrand = "select * from brand where id = @brandId";
+                var brandId = product.BrandId;
+                var brand = await connection.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
+
+                var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
+                {
+                    var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                    var size = await _sizeRepository.Get(productInventory.SizeId);
+                    var color = await _colorRepository.Get(productInventory.ColorId);
+                    tmpProductInventory.Size = size;
+                    tmpProductInventory.Color = color;
+                    return tmpProductInventory;
+                }));
+
+                var modelResult = _mapper.Map<ProductDto>(product);
+                modelResult.Brand = brand;
+                modelResult.ProductInventories = productInventoryDtos.ToList();
+                modelResult.Images = images;
+
+                return modelResult;
+            }
+            return new ProductDto();
+        }
+
+        public async override Task<List<ProductDto>> GetAll(MySqlConnection connection = null)
+        {
+            connection = connection ?? GetSqlConnection();
+
+            connection.Open();
+
+            var sql = "select * from product";
+
+
+            var products = (await connection.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
+            if (products.Count > 0)
+            {
+                var productsResult = new List<ProductDto>();
+                for (int i = 0; i < products.Count; i++)
+                {
+                    var product = products.ElementAt(i);
                     var sqlProductInventories = "select * from product_inventory where product_id = @productId";
                     var sqlImages = "select * from image where product_id = @productId";
 
                     var productId = product.Id;
-                    var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
-                    var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                    var productInventories = (await connection.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                    var images = (await connection.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
 
                     var sqlBrand = "select * from brand where id = @brandId";
                     var brandId = product.BrandId;
-                    var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
+                    var brand = await connection.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
 
                     var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
                     {
@@ -126,95 +179,92 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         tmpProductInventory.Color = color;
                         return tmpProductInventory;
                     }));
-                     
+
                     var modelResult = _mapper.Map<ProductDto>(product);
                     modelResult.Brand = brand;
                     modelResult.ProductInventories = productInventoryDtos.ToList();
                     modelResult.Images = images;
 
-                    return modelResult;
-                }
-                return new ProductDto();
-            }
+                    productsResult.Add(modelResult);
 
+                }
+                return productsResult;
+            }
+            return new List<ProductDto>();
         }
 
-        public async override Task<List<ProductDto>> GetAll()
+        public async Task<ProductDto> GetBySlug(string slug, MySqlConnection connection = null)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
+
+            var sql = "select * from product where slug=@slug";
+
+
+            var product = await connection.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @slug = slug });
+            if (product != null)
             {
-                conn.Open();
+                var sqlProductInventories = "select * from product_inventory where product_id = @productId";
+                var sqlImages = "select * from image where product_id = @productId";
 
-                var sql = "select * from product";
+                var productId = product.Id;
+                var productInventories = (await connection.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                var images = (await connection.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+
+                var sqlBrand = "select * from brand where id = @brandId";
+                var brandId = product.BrandId;
+                var brand = await connection.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
 
 
-                var products = (await conn.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
-                if (products.Count > 0)
+                var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
                 {
-                    var productsResult = new List<ProductDto>();
-                    for (int i = 0; i < products.Count; i++)
-                    {
-                        var product = products.ElementAt(i);
-                        var sqlProductInventories = "select * from product_inventory where product_id = @productId";
-                        var sqlImages = "select * from image where product_id = @productId";
+                    var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
+                    var size = await _sizeRepository.Get(productInventory.SizeId);
+                    var color = await _colorRepository.Get(productInventory.ColorId);
+                    tmpProductInventory.Size = size;
+                    tmpProductInventory.Color = color;
+                    return tmpProductInventory;
+                }));
 
-                        var productId = product.Id;
-                        var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
-                        var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                var modelResult = _mapper.Map<ProductDto>(product);
+                modelResult.Brand = brand;
+                modelResult.ProductInventories = productInventoryDtos.ToList();
+                modelResult.Images = images;
 
-                        var sqlBrand = "select * from brand where id = @brandId";
-                        var brandId = product.BrandId;
-                        var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
-
-                        var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
-                        {
-                            var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
-                            var size = await _sizeRepository.Get(productInventory.SizeId);
-                            var color = await _colorRepository.Get(productInventory.ColorId);
-                            tmpProductInventory.Size = size;
-                            tmpProductInventory.Color = color;
-                            return tmpProductInventory;
-                        }));
-                         
-                        var modelResult = _mapper.Map<ProductDto>(product);
-                        modelResult.Brand = brand;
-                        modelResult.ProductInventories = productInventoryDtos.ToList();
-                        modelResult.Images = images;
-
-                        productsResult.Add(modelResult);
-
-                    }
-                    return productsResult;
-                }
-                return new List<ProductDto>();
+                return modelResult;
             }
+            return new ProductDto();
         }
 
-        public async Task<ProductDto> GetBySlug(string slug)
+        public async Task<PagingResponse<ProductDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+
+            connection = connection ?? GetSqlConnection();
+
+            connection.Open();
+
+            var sql = GetSqlGetPaging(pagingRequest);
+
+
+            var products = (await connection.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
+            if (products.Count > 0)
             {
-                conn.Open();
-
-                var sql = "select * from product where slug=@slug";
-
-
-                var product = await conn.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @slug = slug });
-                if (product != null)
+                var productsResult = new List<ProductDto>();
+                for (int i = 0; i < products.Count; i++)
                 {
+                    var product = products.ElementAt(i);
                     var sqlProductInventories = "select * from product_inventory where product_id = @productId";
                     var sqlImages = "select * from image where product_id = @productId";
 
                     var productId = product.Id;
-                    var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
-                    var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                    var productInventories = (await connection.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
+                    var images = (await connection.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
 
                     var sqlBrand = "select * from brand where id = @brandId";
                     var brandId = product.BrandId;
-                    var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
+                    var brand = await connection.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
 
-
-                    var productInventoryDtos = await Task.WhenAll( productInventories.Select(async (productInventory) =>
+                    var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
                     {
                         var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
                         var size = await _sizeRepository.Get(productInventory.SizeId);
@@ -223,80 +273,30 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         tmpProductInventory.Color = color;
                         return tmpProductInventory;
                     }));
-                     
+
                     var modelResult = _mapper.Map<ProductDto>(product);
                     modelResult.Brand = brand;
                     modelResult.ProductInventories = productInventoryDtos.ToList();
                     modelResult.Images = images;
 
-                    return modelResult;
+                    productsResult.Add(modelResult);
+
                 }
-                return new ProductDto();
+                var pagingResponse = new PagingResponse<ProductDto>();
+                pagingResponse.Items = productsResult;
+                pagingResponse.TotalRecord = productsResult.Count;
+                return pagingResponse;
             }
+            return new PagingResponse<ProductDto>();
         }
 
-        public override async Task<PagingResponse<ProductDto>> GetPaging(PagingRequest pagingRequest)
+        protected override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
-
-            using (var conn = new MySqlConnection(_connectionString))
-            {
-                conn.Open(); 
-
-                var sql  = BuildSelectStatement(pagingRequest);
-
-
-                var products = (await conn.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
-                if (products.Count > 0)
-                {
-                    var productsResult = new List<ProductDto>();
-                    for (int i = 0; i < products.Count; i++)
-                    {
-                        var product = products.ElementAt(i);
-                        var sqlProductInventories = "select * from product_inventory where product_id = @productId";
-                        var sqlImages = "select * from image where product_id = @productId";
-
-                        var productId = product.Id;
-                        var productInventories = (await conn.QueryAsync<ProductInventory>(sql: sqlProductInventories, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
-                        var images = (await conn.QueryAsync<Image>(sql: sqlImages, commandType: System.Data.CommandType.Text, param: new { @productId = productId })).ToList();
-
-                        var sqlBrand = "select * from brand where id = @brandId";
-                        var brandId = product.BrandId;
-                        var brand = await conn.QueryFirstOrDefaultAsync<Brand>(sqlBrand, commandType: System.Data.CommandType.Text, param: new { @brandId = brandId });
-
-                        var productInventoryDtos = await Task.WhenAll(productInventories.Select(async (productInventory) =>
-                        {
-                            var tmpProductInventory = _mapper.Map<ProductInventoryDto>(productInventory);
-                            var size = await _sizeRepository.Get(productInventory.SizeId);
-                            var color = await _colorRepository.Get(productInventory.ColorId);
-                            tmpProductInventory.Size = size;
-                            tmpProductInventory.Color = color;
-                            return tmpProductInventory;
-                        }));
-
-                        var modelResult = _mapper.Map<ProductDto>(product);
-                        modelResult.Brand = brand;
-                        modelResult.ProductInventories = productInventoryDtos.ToList();
-                        modelResult.Images = images;
-
-                        productsResult.Add(modelResult);
-
-                    }
-                    var pagingResponse = new PagingResponse<ProductDto>();
-                    pagingResponse.Items = productsResult;
-                    return pagingResponse;
-                }
-                return new PagingResponse<ProductDto>();
-            }
-        }
-
-        protected override string BuildSelectStatement(PagingRequest pagingRequest)
-        {
-            var tableName = _tableName.EndsWith("Dto") ? _tableName.Replace("Dto", "") : _tableName;
-            var sql = $"select * from {tableName} where 1=1";
+            var sql = $"select * from product where 1=1";
 
             if (pagingRequest is ProductPagingRequest productPagingRequest)
             {
-                if (!string.IsNullOrEmpty( productPagingRequest.Name))
+                if (!string.IsNullOrEmpty(productPagingRequest.Name))
                 {
                     sql += $" and name like '%{productPagingRequest.Name}%'";
                 }
@@ -309,32 +309,146 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             return sql;
         }
 
-        public async override Task<ProductDto> Update(ProductDto model)
+        public async override Task<ProductDto?> Update(ProductDto model, MySqlConnection connection = null)
         {
+            connection = connection ?? GetSqlConnection();
+
             var productFromDb = Get(model.Id);
             if (productFromDb != null)
             {
-                using (var conn = new MySqlConnection(_connectionString))
+                connection.Open();
+                var trans = connection.BeginTransaction();
+
+                var sql = "proc_product_update";
+
+                var productToUpdate = _mapper.Map<Product>(model);
+
+                var affectedRows = await connection.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: productToUpdate, transaction: trans);
+                if (affectedRows > 0)
                 {
-                    conn.Open();
+                    // thêm/xoá ảnh; thêm/xoá/update sản phẩm 
+                    int ImageOperationCount = 0, ProductInventoryOperationCount = 0;
 
-                    var sql = "proc_product_update";
-
-                    var updatedProduct = await conn.ExecuteScalarAsync<Product>(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: model);
-                    if (updatedProduct is not null)
+                    for (int i = 0; i < model.Images.Count; i++)
                     {
-                        // get relevant data
-                        var updatedProductDto = await Get(updatedProduct.Id);
-                        return updatedProductDto;
+                        var image = model.Images[i];
+                        bool isSuccessful = await HandleImageOperation(image, connection);
+                        if (isSuccessful)
+                        {
+                            ImageOperationCount++;
+                        }
                     }
-                    return null;
+                    if (ImageOperationCount != model.Images.Count)
+                    {
+                        trans.Rollback();
+                        return null;
+                    }
+
+                    for (int i = 0; i < model.ProductInventories.Count; i++)
+                    {
+                        var productInventory = model.ProductInventories[i];
+                        bool isSuccessful = await HandleProductInventoryOperation(productInventory, connection);
+                        if (isSuccessful)
+                        {
+                            ProductInventoryOperationCount++;
+                        }
+                    }
+                    if (ProductInventoryOperationCount != model.ProductInventories.Count)
+                    {
+                        trans.Rollback();
+                        return null;
+                    }
+
+                    trans.Commit();
+
+                    // get relevant data
+                    var updatedProductDto = await Get(model.Id);
+                    return updatedProductDto;
                 }
+                return null;
             }
             return null;
         }
 
-        
+        /// <summary>
+        /// xử lý khi update sản phẩm cha: thêm/xoá/update sản phẩm con
+        /// </summary>
+        /// <param name="productInventory"></param>
+        /// <returns></returns>
+        private async Task<bool> HandleProductInventoryOperation(ProductInventoryDto productInventory, MySqlConnection connection)
+        {
+            bool isSuccessful = false;
 
-        
+            if (productInventory. ModelState == Core.Enum.ModelStateEnum.Create)
+            {
+                var model = _mapper.Map<ProductInventory>(productInventory);
+                var createdModel = await _productInventoryRepository.Create(model, connection);
+                if (createdModel is not null)
+                {
+                    return true;
+                }
+                return false;
+            }
+            else if (productInventory. ModelState == Core.Enum.ModelStateEnum.Delete)
+            {
+                var affectedRows = await _productInventoryRepository.Delete(productInventory.Id);
+                if (affectedRows > 0)
+                {
+                    return true;
+                }
+                return false;
+            }
+            else if (productInventory.ModelState == Core.Enum.ModelStateEnum.Update)
+            {
+                var model = _mapper.Map<ProductInventory>(productInventory);
+                var updatedModel = await _productInventoryRepository.Update(model, connection);
+                if (updatedModel is not null)
+                {
+                    return true;
+                }
+                return false;
+            }
+            else if (productInventory. ModelState == Core.Enum.ModelStateEnum.None)
+            {
+                return true;
+            }
+
+            return isSuccessful;
+        }
+
+        /// <summary>
+        /// xử lý khi update sản phẩm cha: thêm/xoá ảnh
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns>true nếu thành công; false nếu ngược lại</returns>
+        private async Task<bool> HandleImageOperation(Image image, MySqlConnection connection)
+        {
+            bool isSuccessful = false;
+            if (image.ModelState == Core.Enum.ModelStateEnum.Create)
+            {
+                var res = await _imageRepository.Create(image, connection);
+                if (res is not null)
+                {
+                    return true;
+                }
+                return false;
+            }
+            else if (image.ModelState == Core.Enum.ModelStateEnum.Delete)
+            {
+                var res = await _imageRepository.Delete(image.Id);
+                if (res > 0)
+                {
+                    return true;
+                }
+                return false;
+            }
+            else if (image.ModelState == Core.Enum.ModelStateEnum.None)
+            {
+                return true;
+            }
+            return isSuccessful;
+        }
     }
+
 }
+

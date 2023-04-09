@@ -17,8 +17,8 @@ namespace HoangCuongSneaker.Core.Model
         public int Sku { get; set; }
         public string Name { get; set; } = string.Empty;
         // giá bán do nhà cung cấp đề xuất
-        public bool IsActive { get; set; }
-        public decimal RrPrice { get; set; }
+        public bool? IsActive { get; set; } = true;
+        public decimal? RrPrice { get; set; }
         // giá bán thực sẽ bán
         public decimal SellPrice { get; set; }
         public int Quantity { get; set; }
@@ -26,5 +26,6 @@ namespace HoangCuongSneaker.Core.Model
         public int ProductId { get; set; }
         public int SizeId { get; set; }
         public int ColorId { get; set; }
+        public int? BrandId { get; set; }
     }
 }

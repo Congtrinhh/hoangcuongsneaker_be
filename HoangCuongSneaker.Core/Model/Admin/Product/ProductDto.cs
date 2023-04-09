@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HoangCuongSneaker.Core.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,9 +12,6 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
     /// </summary>
     public class ProductDto : BaseModel
     {
-        // mapper
-        // luu y - data table con thieu: bang product
-
         public string Name { get; set; } = string.Empty;
         /// <summary>
         /// bằng giá của phần tử đầu tiên từ list product inventory
@@ -34,9 +32,23 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         }
         public List<ProductInventoryDto> ProductInventories { get; set; } = new List<ProductInventoryDto>();
         public List<Image> Images { get; set; } = new List<Image>();
-        public string Slug { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        private string? slug;
+        public string Slug
+        {
+            get
+            {
+                var str = string.Empty;
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    str = FunctionUtil.Slugify(Name);
+                }
+                return str;
+            }
+            set { slug = value; }
+        }
         public Brand Brand { get; set; } = new Brand();
+        public bool? IsActive { get; set; } = true;
+        public string? Description { get; set; } = string.Empty;
 
     }
 }

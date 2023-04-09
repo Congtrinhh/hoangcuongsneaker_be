@@ -12,8 +12,8 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         public int Sku { get; set; }
         public string Name { get; set; } = string.Empty;
         // giá bán do nhà cung cấp đề xuất
-        public bool IsActive { get; set; }
-        public decimal RrPrice { get; set; }
+        public bool? IsActive { get; set; } = true;
+        public decimal? RrPrice { get; set; }
         // giá bán thực sẽ bán
         public decimal SellPrice { get; set; }
         public int Quantity { get; set; }
@@ -22,12 +22,14 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         public Size Size { get; set; }
         public Color Color { get; set; }
 
-        private decimal discount;
-        public decimal Discount
+        private decimal? discount;
+        public decimal? Discount
         {
-            get {
-                decimal discountPercent = (decimal)1.0 * SellPrice / RrPrice;
-                if (discountPercent<1)
+            get
+            {
+                if (SellPrice == 0 || RrPrice == 0) return 0;
+                decimal discountPercent = ((decimal)((decimal)1.0 * SellPrice / RrPrice));
+                if (discountPercent < 1)
                 {
                     return discountPercent;
                 }

@@ -3,7 +3,6 @@ D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\obj\Debug\net6.0\HoangCuongSneaker.Api.AssemblyInfoInputs.cache
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\obj\Debug\net6.0\HoangCuongSneaker.Api.AssemblyInfo.cs
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\obj\Debug\net6.0\HoangCuongSneaker.Api.csproj.CoreCompileInputs.cache
-D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\obj\Debug\net6.0\HoangCuongSneaker.Api.MvcApplicationPartsAssemblyInfo.cs
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\obj\Debug\net6.0\HoangCuongSneaker.Api.MvcApplicationPartsAssemblyInfo.cache
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\bin\Debug\net6.0\appsettings.Development.json
 D:\___Đồ án\hoang-cuong-sneaker-project\HoangCuongSneaker\HoangCuongSneaker\bin\Debug\net6.0\appsettings.json

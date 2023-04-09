@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HoangCuongSneaker.Core.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,5 +19,7 @@ namespace HoangCuongSneaker.Core.Model
         public DateTime UpdatedAt { get; set; }
         // id người sửa
         public int UpdatedBy { get; set; }
+        // trạng thái của model để lưu vào db
+        public ModelStateEnum? ModelState { get; set; } = ModelStateEnum.None;
     }
 }

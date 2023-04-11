@@ -9,7 +9,7 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
 {
     public class ProductInventoryDto : BaseModel
     {
-        public int Sku { get; set; }
+        public string Sku { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
         // giá bán do nhà cung cấp đề xuất
         public bool? IsActive { get; set; } = true;

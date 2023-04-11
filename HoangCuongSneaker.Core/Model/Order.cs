@@ -15,6 +15,6 @@ namespace HoangCuongSneaker.Core.Model
         public string Code { get; set; } = string.Empty;
         public ShippingStatusEnum ShippingStatus { get; set; }
         public DateTime? ShippedAt { get; set; }
-        public decimal BillPrice { get; set; }
+        public decimal BillPrice { get; set; } = 0;
     }
 }

@@ -54,7 +54,7 @@ namespace HoangCuongSneaker.Repository.Admin
             return null;
         }
 
-        protected override string GetSqlGetPaging(PagingRequest pagingRequest)
+        public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
             var sql = $"select * from {_tableName} where 1=1";
 

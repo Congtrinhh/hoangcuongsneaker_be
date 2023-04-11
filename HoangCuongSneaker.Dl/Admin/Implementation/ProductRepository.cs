@@ -30,15 +30,15 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             _productInventoryRepository = productInventoryRepository;
         }
 
-        public override async Task<ProductDto?> Create(ProductDto model, MySqlConnection connection = null)
+        public override async Task<ProductDto?> Create(ProductDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             connection = connection ?? GetSqlConnection();
             connection.Open();
-            var trans = connection.BeginTransaction();
+            transaction = transaction ?? connection.BeginTransaction();
             var procInsertProduct = "proc_product_insert";
 
             var productToInsert = _mapper.Map<Product>(model);
-            var insertedProductId = await connection.ExecuteScalarAsync<int>(sql: procInsertProduct, commandType: System.Data.CommandType.StoredProcedure, param: productToInsert, transaction: trans);
+            var insertedProductId = await connection.ExecuteScalarAsync<int>(sql: procInsertProduct, commandType: System.Data.CommandType.StoredProcedure, param: productToInsert, transaction: transaction);
 
             if (insertedProductId > 0)
             {
@@ -49,44 +49,53 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
                 for (int i = 0; i < model.Images.Count; i++)
                 {
-                    var affectedRow = await connection.ExecuteAsync(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: model.Images[i], transaction: trans);
-                    if (affectedRow == 1)
+                    var insertModel = model.Images[i];
+                    insertModel.ProductId = insertedProductId;
+                    var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: insertModel, transaction: transaction);
+                    if (insertedId > 0)
                     {
                         insertedImageCount++;
                     }
                 }
                 if (insertedImageCount != model.Images.Count)
                 {
-                    trans.Rollback();
+                    transaction.Rollback();
                     return null;
                 }
 
                 for (int i = 0; i < model.ProductInventories.Count; i++)
                 {
-                    var affectedRow = await connection.ExecuteAsync(sql: procInsertProductInventory, commandType: System.Data.CommandType.StoredProcedure, param: model.ProductInventories[i], transaction: trans);
-                    if (affectedRow == 1)
+                    var insertModel = _mapper.Map<ProductInventory>(model.ProductInventories[i]);
+                    insertModel.ProductId = insertedProductId;
+                    var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsertProductInventory, commandType: System.Data.CommandType.StoredProcedure, param: insertModel, transaction: transaction);
+                    if (insertedId > 0)
                     {
                         insertedProductInventoryCount++;
                     }
                 }
                 if (insertedProductInventoryCount != model.ProductInventories.Count)
                 {
-                    trans.Rollback();
+                    transaction.Rollback();
                     return null;
                 }
-                trans.Commit();
+                transaction.Commit();
             }
             else
             {
-                trans.Rollback();
+                transaction.Rollback();
                 return null;
             }
 
             // lấy ra sản phẩm vừa đc insert vào db và trả về client
             var newlyInsertedProduct = await Get(insertedProductId);
-            newlyInsertedProduct.Images = model.Images;
-            newlyInsertedProduct.ProductInventories = model.ProductInventories;
-            return newlyInsertedProduct;
+            if (newlyInsertedProduct != null)
+            {
+                newlyInsertedProduct.Images = model.Images;
+                newlyInsertedProduct.ProductInventories = model.ProductInventories;
+                return newlyInsertedProduct;
+
+            }
+            return null;
         }
 
         public async override Task<int> Delete(int id, MySqlConnection connection = null)
@@ -100,14 +109,13 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             return affectedRow;
         }
 
-        public override async Task<ProductDto> Get(int id, MySqlConnection connection = null)
+        public override async Task<ProductDto?> Get(int id, MySqlConnection connection = null)
         {
             connection = connection ?? GetSqlConnection();
 
             connection.Open();
 
             var sql = "select * from product where id=@id";
-
 
             var product = await connection.QueryFirstOrDefaultAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
             if (product != null)
@@ -244,9 +252,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             connection.Open();
 
             var sql = GetSqlGetPaging(pagingRequest);
-
+            var sqlTotalCount = GetSqlGetTotalCountPaging(pagingRequest);
 
             var products = (await connection.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
+            int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text); 
             if (products.Count > 0)
             {
                 var productsResult = new List<ProductDto>();
@@ -284,32 +293,47 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 }
                 var pagingResponse = new PagingResponse<ProductDto>();
                 pagingResponse.Items = productsResult;
-                pagingResponse.TotalRecord = productsResult.Count;
+                pagingResponse.TotalRecord = totalCount;
                 return pagingResponse;
             }
             return new PagingResponse<ProductDto>();
         }
 
-        protected override string GetSqlGetPaging(PagingRequest pagingRequest)
+        public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
             var sql = $"select * from product where 1=1";
 
             if (pagingRequest is ProductPagingRequest productPagingRequest)
             {
-                if (!string.IsNullOrEmpty(productPagingRequest.Name))
+                if (!string.IsNullOrEmpty(productPagingRequest.FilterValue))
                 {
-                    sql += $" and name like '%{productPagingRequest.Name}%'";
+                    sql += $" and name like '%{productPagingRequest.FilterValue}%'";
                 }
             }
 
             int limit = pagingRequest.PageSize;
             int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
+            sql += " order by updated_at desc, created_at desc ";
             sql += $" limit {limit} offset {offset}";
 
             return sql;
         }
 
-        public async override Task<ProductDto?> Update(ProductDto model, MySqlConnection connection = null)
+        public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
+        {
+            var sql = "select count(1) from product where 1=1";
+
+            if (pagingRequest is ProductPagingRequest productPagingRequest)
+            {
+                if (!string.IsNullOrEmpty(productPagingRequest.FilterValue))
+                {
+                    sql += $" and name like '%{productPagingRequest.FilterValue}%'";
+                }
+            }
+            return sql;
+        }
+
+        public async override Task<ProductDto?> Update(ProductDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             connection = connection ?? GetSqlConnection();
 
@@ -317,13 +341,13 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             if (productFromDb != null)
             {
                 connection.Open();
-                var trans = connection.BeginTransaction();
+                transaction = transaction ?? connection.BeginTransaction();
 
                 var sql = "proc_product_update";
 
                 var productToUpdate = _mapper.Map<Product>(model);
 
-                var affectedRows = await connection.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: productToUpdate, transaction: trans);
+                var affectedRows = await connection.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: productToUpdate, transaction: transaction);
                 if (affectedRows > 0)
                 {
                     // thêm/xoá ảnh; thêm/xoá/update sản phẩm 
@@ -332,7 +356,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     for (int i = 0; i < model.Images.Count; i++)
                     {
                         var image = model.Images[i];
-                        bool isSuccessful = await HandleImageOperation(image, connection);
+                        bool isSuccessful = await HandleImageOperation(image, connection, transaction);
                         if (isSuccessful)
                         {
                             ImageOperationCount++;
@@ -340,14 +364,14 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     }
                     if (ImageOperationCount != model.Images.Count)
                     {
-                        trans.Rollback();
+                        transaction.Rollback();
                         return null;
                     }
 
                     for (int i = 0; i < model.ProductInventories.Count; i++)
                     {
                         var productInventory = model.ProductInventories[i];
-                        bool isSuccessful = await HandleProductInventoryOperation(productInventory, connection);
+                        bool isSuccessful = await HandleProductInventoryOperation(productInventory, connection, transaction);
                         if (isSuccessful)
                         {
                             ProductInventoryOperationCount++;
@@ -355,11 +379,11 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     }
                     if (ProductInventoryOperationCount != model.ProductInventories.Count)
                     {
-                        trans.Rollback();
+                        transaction.Rollback();
                         return null;
                     }
 
-                    trans.Commit();
+                    transaction.Commit();
 
                     // get relevant data
                     var updatedProductDto = await Get(model.Id);
@@ -375,21 +399,21 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         /// </summary>
         /// <param name="productInventory"></param>
         /// <returns></returns>
-        private async Task<bool> HandleProductInventoryOperation(ProductInventoryDto productInventory, MySqlConnection connection)
+        private async Task<bool> HandleProductInventoryOperation(ProductInventoryDto productInventory, MySqlConnection connection, MySqlTransaction transaction)
         {
             bool isSuccessful = false;
 
-            if (productInventory. ModelState == Core.Enum.ModelStateEnum.Create)
+            if (productInventory.ModelState == Core.Enum.ModelStateEnum.Create)
             {
                 var model = _mapper.Map<ProductInventory>(productInventory);
-                var createdModel = await _productInventoryRepository.Create(model, connection);
+                var createdModel = await _productInventoryRepository.Create(model, connection, transaction: transaction);
                 if (createdModel is not null)
                 {
                     return true;
                 }
                 return false;
             }
-            else if (productInventory. ModelState == Core.Enum.ModelStateEnum.Delete)
+            else if (productInventory.ModelState == Core.Enum.ModelStateEnum.Delete)
             {
                 var affectedRows = await _productInventoryRepository.Delete(productInventory.Id);
                 if (affectedRows > 0)
@@ -401,14 +425,14 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             else if (productInventory.ModelState == Core.Enum.ModelStateEnum.Update)
             {
                 var model = _mapper.Map<ProductInventory>(productInventory);
-                var updatedModel = await _productInventoryRepository.Update(model, connection);
+                var updatedModel = await _productInventoryRepository.Update(model, connection, transaction: transaction);
                 if (updatedModel is not null)
                 {
                     return true;
                 }
                 return false;
             }
-            else if (productInventory. ModelState == Core.Enum.ModelStateEnum.None)
+            else if (productInventory.ModelState == Core.Enum.ModelStateEnum.None)
             {
                 return true;
             }
@@ -421,12 +445,12 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         /// </summary>
         /// <param name="image"></param>
         /// <returns>true nếu thành công; false nếu ngược lại</returns>
-        private async Task<bool> HandleImageOperation(Image image, MySqlConnection connection)
+        private async Task<bool> HandleImageOperation(Image image, MySqlConnection connection, MySqlTransaction transaction)
         {
             bool isSuccessful = false;
             if (image.ModelState == Core.Enum.ModelStateEnum.Create)
             {
-                var res = await _imageRepository.Create(image, connection);
+                var res = await _imageRepository.Create(image, connection, transaction: transaction);
                 if (res is not null)
                 {
                     return true;

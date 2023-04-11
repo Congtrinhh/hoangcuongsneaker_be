@@ -48,18 +48,16 @@ namespace HoangCuongSneaker.Repository
         /// <param name="model"></param>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public virtual async Task<T?> Create(T model, MySqlConnection connection = null)
+        public virtual async Task<T?> Create(T model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
-            connection = connection ?? GetSqlConnection();
-            connection.Open();
-            var transaction = connection.BeginTransaction();
+            connection = connection ?? GetSqlConnection(); 
+            transaction = transaction ?? connection.BeginTransaction();
 
             string procInsert = $"proc_{_tableName}_insert";
             var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsert, commandType: System.Data.CommandType.StoredProcedure, param: model, transaction: transaction);
             if (insertedId != 0)
             {
-                var newlyInsertedModel = await Get(insertedId);
-                return newlyInsertedModel;
+                return model;
             }
             return null;
         }
@@ -120,7 +118,7 @@ namespace HoangCuongSneaker.Repository
         /// </summary>
         /// <param name="pagingRequest"></param>
         /// <returns></returns>
-        protected virtual string GetSqlGetPaging(PagingRequest pagingRequest)
+        public virtual string GetSqlGetPaging(PagingRequest pagingRequest)
         {
 
             var sql = $"select * from {_tableName} where 1=1";
@@ -133,27 +131,53 @@ namespace HoangCuongSneaker.Repository
         }
 
         /// <summary>
+        /// tạo câu lệnh get tổng số bản ghi paging
+        /// </summary>
+        /// <param name="pagingRequest"></param>
+        /// <returns></returns>
+        public virtual string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
+        {
+            var sql = $"select count(1) from {_tableName} where 1=1";
+            return sql;
+        }
+
+        /// <summary>
         /// cập nhật model và trả về model đó với giá trị mới cập nhật
         /// </summary>
         /// <param name="model"></param>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public virtual async Task<T?> Update(T model, MySqlConnection connection = null)
+        public virtual async Task<T?> Update(T model, MySqlConnection connection = null, MySqlTransaction transaction=null)
         {
-            connection = connection ?? GetSqlConnection();
-            connection.Open();
-            var transaction = connection.BeginTransaction();
+            connection = connection ?? GetSqlConnection(); 
+            transaction = transaction ?? connection.BeginTransaction();
 
             var procedureUpdate = $"proc_{_tableName}_update";
             var res = await connection.ExecuteAsync(sql: procedureUpdate, param: model, commandType: System.Data.CommandType.StoredProcedure, transaction: transaction);
             if (res != 0)
             {
-                var newlyUpdatedModel = await Get(model.Id);
-                return newlyUpdatedModel;
+                return model;
             }
             return null;
         }
 
+        /// <summary>
+        /// setup thêm cho model trước khi lưu
+        /// </summary>
+        /// <param name="model"></param>
+        public virtual void BeforeInsert(T model)
+        {
+            
+        }
+
+        /// <summary>
+        /// setup thêm cho model trước khi update
+        /// </summary>
+        /// <param name="model"></param>
+        public virtual void BeforeUpdate(T model)
+        {
+
+        }
         #endregion
     }
 }

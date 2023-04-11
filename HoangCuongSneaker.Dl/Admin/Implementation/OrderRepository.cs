@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using HoangCuongSneaker.Core;
 using HoangCuongSneaker.Core.Dto.Paging;
+using HoangCuongSneaker.Core.Dto.Paging.Admin;
+using HoangCuongSneaker.Core.Enum;
 using HoangCuongSneaker.Core.Model;
 using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Core.Utility;
@@ -65,9 +67,118 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         /// </summary>
         /// <param name="pagingRequest"></param>
         /// <returns></returns>
-        public Task<PagingResponse<OrderDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null)
+        public async Task<PagingResponse<OrderDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null)
         {
-            throw new NotImplementedException();
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
+
+            var sqlSelect = GetSqlGetPaging(pagingRequest);
+            var sqlTotalCount = GetSqlGetTotalCountPaging(pagingRequest);
+
+            var queriedOrders = (await connection.QueryAsync<Order>(sql: sqlSelect, commandType: System.Data.CommandType.Text)).ToList();
+            int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text);
+
+            var orderDtos = new List<OrderDto>();
+            foreach (var order in queriedOrders)
+            {
+                var orderDto = _mapper.Map<OrderDto>(order);
+
+                var user = await _userRepository.Get(order.UserId);
+
+                var sqlOrderItemSelect = "select * from order_item where order_id=@orderId";
+                var queriedOrderItems = (await connection.QueryAsync<OrderItemDto>(sql: sqlOrderItemSelect, param: new { @orderId = order.Id }, commandType: System.Data.CommandType.Text)).ToList();
+
+                orderDto.OrderItems = queriedOrderItems;
+                orderDto.User = user;
+                orderDtos.Add(orderDto);
+            }
+
+            var response = new PagingResponse<OrderDto>();
+            response.Items = orderDtos.ToList();
+            response.TotalRecord = totalCount;
+
+            return response;
+        }
+
+        public override string GetSqlGetPaging(PagingRequest pagingRequest)
+        {
+            var sql = $"select * from purchase_order where 1=1";
+
+            if (pagingRequest is OrderPagingRequest p)
+            {
+                if (p.ShippingStatus.HasValue)
+                {
+                    sql += $" and shipping_status = {(int)p.ShippingStatus.Value}";
+                }
+                if (!string.IsNullOrWhiteSpace(p.FilterValue))
+                {
+                    sql += $" and code like '%{p.FilterValue}%'";
+                }
+                if (p.DateFilter.HasValue)
+                {
+                    sql += GetSqlFilterDate(p.DateFilter);
+                }
+            }
+
+            int limit = pagingRequest.PageSize;
+            int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
+            sql += " order by updated_at desc, created_at desc ";
+            sql += $" limit {limit} offset {offset}";
+            return sql;
+        }
+
+        /// <summary>
+        /// thêm câu sql lọc theo ngày tạo đơn hàng
+        /// </summary>
+        /// <param name="dateFilter"></param>
+        /// <returns></returns>
+        private string GetSqlFilterDate(DateFilterOptionEnum? dateFilter = DateFilterOptionEnum.Today)
+        {
+            DateTime startDate = DateTime.Now.Date, endDate = DateTime.Now.Date;
+
+            DateTime baseDate = DateTime.Today;
+            switch (dateFilter)
+            {
+                case DateFilterOptionEnum.Today:
+                    startDate = baseDate.AddDays(-1);
+                    endDate = DateTime.Today;
+                    break;
+                case DateFilterOptionEnum.ThisWeek:
+                    startDate = baseDate.AddDays(-(int)baseDate.DayOfWeek);
+                    endDate = startDate.AddDays(7).AddSeconds(-1);
+                    break;
+                case DateFilterOptionEnum.ThisMonth:
+                    startDate = baseDate.AddDays(1 - baseDate.Day);
+                    endDate = startDate.AddMonths(1).AddSeconds(-1);
+                    break;
+                case DateFilterOptionEnum.All:
+                default:
+                    return string.Empty;
+            }
+            var sql = $" and created_at between '{startDate.ToString("yyyy-MM-dd h:mm:ss tt")}' and '{endDate.ToString("yyyy-MM-dd h:mm:ss tt")}' ";
+            return sql;
+        }
+
+        public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
+        {
+            var sql = "select count(1) from purchase_order where 1=1";
+
+            if (pagingRequest is OrderPagingRequest p)
+            {
+                if (p.ShippingStatus.HasValue)
+                {
+                    sql += $" and shipping_status = {(int)p.ShippingStatus.Value}";
+                }
+                if (!string.IsNullOrWhiteSpace(p.FilterValue))
+                {
+                    sql += $" and code like '%{p.FilterValue}%'";
+                }
+                if (p.DateFilter.HasValue)
+                {
+                    sql += GetSqlFilterDate(p.DateFilter);
+                }
+            }
+            return sql;
         }
 
         /// <summary>
@@ -76,26 +187,27 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async override Task<OrderDto?> Update(OrderDto model, MySqlConnection connection = null)
+        public async override Task<OrderDto?> Update(OrderDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
-            var productFromDb = Get(model.Id);
-            if (productFromDb != null)
+            connection = connection ?? GetSqlConnection();
+            connection.Open();// error prone
+
+            var sql = "proc_purchase_order_update";
+
+            var modelUpdate = _mapper.Map<Order>(model);
+            int updatedId = await connection.ExecuteScalarAsync<int>(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: modelUpdate);
+            if (updatedId > 0)
             {
-                connection = connection ?? GetSqlConnection();
-                await connection.OpenAsync();// error prone
-
-                var sql = "proc_product_update";
-
-                var updatedProduct = await connection.ExecuteScalarAsync<Product>(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: model);
-                if (updatedProduct is not null)
-                {
-                    // get relevant data
-                    var updatedProductDto = await Get(updatedProduct.Id);
-                    return updatedProductDto;
-                }
-                return null;
+                // TODO: update order items
+                // update bill price of order
+                return model;
             }
             return null;
+        }
+
+        public override void BeforeInsert(OrderDto model)
+        {
+
         }
 
         /// <summary>
@@ -107,11 +219,11 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public override async Task<OrderDto?> Create(OrderDto model, MySqlConnection connection = null)
+        public override async Task<OrderDto?> Create(OrderDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             connection = connection ?? GetSqlConnection();
             await connection.OpenAsync();// error prone
-            var transaction = connection.BeginTransaction();
+            transaction = transaction ?? connection.BeginTransaction();
 
             var user = await _userRepository.GetByUserName(model.User.UserName);
             if (user is not null && user.Id > 0)
@@ -138,7 +250,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         var insertedOrderItemId = await connection.ExecuteScalarAsync<int>(sql: procOrderItemInsert, commandType: System.Data.CommandType.StoredProcedure, param: orderItemParam, transaction: transaction);
                         if (insertedOrderItemId > 0)
                         {
-                            insertedOrderItemCount++;  
+                            insertedOrderItemCount++;
                             orderItemsResult.Add(orderItemParam);
                         }
                     }
@@ -148,14 +260,16 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     }
                     else
                     {
+                        // update bill price of order
+
                         transaction.Commit();
-                        var newlyInsertedOrder = await Get(insertedOrderId); 
+                        var newlyInsertedOrder = await Get(insertedOrderId);
                         return newlyInsertedOrder;
                     }
                 }
                 else
                 {
-                    transaction.Rollback(); 
+                    transaction.Rollback();
                 }
             }
             return null;

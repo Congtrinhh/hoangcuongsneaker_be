@@ -34,6 +34,6 @@ namespace HoangCuongSneaker.Core.Dto.Paging
                 else pageIndex = value;
             }
         }
-
+        public string? FilterValue { get; set; }
     }
 }

@@ -50,24 +50,7 @@ namespace HoangCuongSneaker.Api.Controllers
                 response.OnFailure(e);
             }
             return response;
-        }
-
-        //[HttpPost("paging")]
-        //public virtual async Task<ApiResponse> GetPaging(object pagingRequest)// giả sử param truyền lên luôn đúng.
-        //{
-        //    var response = new ApiResponse();
-        //    try
-        //    {
-        //        PagingResponse<T> pagingResponse = await _baseRepository.GetPaging(pagingRequest as PagingRequest);
-        //        response.OnSuccess(data: pagingResponse);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        response.OnFailure(e);
-        //    }
-        //    return response;
-
-        //} 
+        } 
 
         // POST api/<BaseController>
         [HttpPost]

@@ -16,5 +16,6 @@ namespace HoangCuongSneaker.Core.Model.Admin.Order
         public string? Phone { get; set; } = string.Empty;
         public bool? EmailVerified { get; set; } = true;
         public string? VerificationCode { get; set; } = string.Empty;
+        public List<OrderDto>? Orders { get; set; } = new List<OrderDto>();
     }
 }

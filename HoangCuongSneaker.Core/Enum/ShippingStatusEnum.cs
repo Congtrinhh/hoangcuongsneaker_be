@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace HoangCuongSneaker.Core.Enum
 {
+    /// <summary>
+    /// Trạng thái đơn hàng
+    /// </summary>
     public enum ShippingStatusEnum
     {
         /// đơn hàng chờ tiếp nhận

@@ -1,5 +1,6 @@
 ﻿
-using HoangCuongSneaker.Core.Dto; 
+using HoangCuongSneaker.Core.Dto;
+using HoangCuongSneaker.Core.Dto.Paging.Admin;
 using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Repository.Admin.Interface;
 using HoangCuongSneaker.Repository.Admin.Interface.Address;
@@ -15,12 +16,14 @@ namespace HoangCuongSneaker.Api.Controllers.User
         protected IProvinceRepository _provinceRepository;
         protected IDistrictRepository _districtRepository;
         protected IWardRepository _wardRepository;
+        protected IOrderRepository _orderRepository;
         public OrdersController(IOrderRepository orderRepository, IOrderService orderService, IProvinceRepository provinceRepository, IDistrictRepository districtRepository, IWardRepository wardRepository) : base(orderRepository)
         {
             _orderService = orderService;
             _provinceRepository = provinceRepository;
             _districtRepository = districtRepository;
             _wardRepository = wardRepository;
+            _orderRepository = orderRepository;
         }
 
         [HttpGet("provinces")]
@@ -79,6 +82,22 @@ namespace HoangCuongSneaker.Api.Controllers.User
             try
             {
                 var res = await _orderService.Create(model);
+                response.OnSuccess(res);
+            }
+            catch (Exception e)
+            {
+                response.OnFailure(e);
+            }
+            return response;
+        }
+
+        [HttpPost("paging")]
+        public async Task<ApiResponse> GetPaging([FromBody] OrderPagingRequest pagingRequest)
+        {
+            var response = new ApiResponse();
+            try
+            {
+                var res = await _orderRepository.GetPaging(pagingRequest);
                 response.OnSuccess(res);
             }
             catch (Exception e)

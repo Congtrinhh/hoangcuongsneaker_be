@@ -13,10 +13,11 @@ namespace HoangCuongSneaker.Repository
     public interface IBaseRepository<T> where T : BaseModel
     {
         Task<T?> Get(int id, MySqlConnection connection = null);
-        Task<List<T>> GetAll(MySqlConnection connection = null);
-        //Task<PagingResponse<T>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null);
-        Task<T?> Create(T model, MySqlConnection connection = null);
-        Task<T?> Update(T model, MySqlConnection connection = null);
+        Task<List<T>> GetAll(MySqlConnection connection = null); 
+        Task<T?> Create(T model, MySqlConnection connection = null, MySqlTransaction transaction = null);
+        Task<T?> Update(T model, MySqlConnection connection = null, MySqlTransaction transaction = null);
         Task<int> Delete(int id, MySqlConnection connection = null);
+        void BeforeInsert(T model);
+        void BeforeUpdate(T model);
     }
 }

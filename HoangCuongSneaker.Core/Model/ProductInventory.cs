@@ -14,7 +14,7 @@ namespace HoangCuongSneaker.Core.Model
         /// mã duy nhất phân biệt các sản phẩm với nhau.
         /// vẫn cần dùng thêm id để dùng base crud
         /// </summary>
-        public int Sku { get; set; }
+        public string Sku { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
         // giá bán do nhà cung cấp đề xuất
         public bool? IsActive { get; set; } = true;

@@ -21,25 +21,27 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         {
         }
 
-        public override async Task<UserDto> Get(int id, MySqlConnection connection = null)
+        public override async Task<UserDto?> Get(int id, MySqlConnection connection = null)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
+
+            var sql = "select * from user where id=@id";
+
+            var user = await connection.QueryFirstOrDefaultAsync<User>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
+            if (user is not null && user.Id > 0)
             {
-                conn.Open();
+                var sqlOrderSelect = "select * from purchase_order where user_id=@userId"; // TODO: dung ham paging tu orderRepository de cai tien hieu nang
 
-                var sql = "select * from user where id=@id";
+                var queriedOrders = (await connection.QueryAsync<Order>(sql: sqlOrderSelect, commandType: System.Data.CommandType.Text, param: new { @userId = user.Id })).ToList();
+                var orderDtos = queriedOrders.Select((order) => _mapper.Map<OrderDto>(order)).ToList();
 
-                var user = await conn.QueryFirstOrDefaultAsync<User>(sql: sql, commandType: System.Data.CommandType.Text, param: new { @id = id });
-                if (user is not null && user.Id > 0)
-                {
-                    var modelResult = _mapper.Map<UserDto>(user);
-                    return modelResult;
-                }
-                else
-                {
-                    return new UserDto();
-                }
+                var modelResult = _mapper.Map<UserDto>(user);
+                modelResult.Orders = orderDtos;
+
+                return modelResult;
             }
+            return null;
         }
 
         public override async Task<int> Delete(int id, MySqlConnection connection = null)
@@ -55,7 +57,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<UserDto> Create(UserDto model, MySqlConnection connection = null)
+        public override async Task<UserDto> Create(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -76,7 +78,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<UserDto> Update(UserDto model, MySqlConnection connection = null)
+        public override async Task<UserDto> Update(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -100,59 +102,76 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
         public async Task<PagingResponse<UserDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null)
         {
-            using (var conn = new MySqlConnection(_connectionString))
+            connection = connection ?? GetSqlConnection();
+            connection.Open();
+
+            var sqlSelect = GetSqlGetPaging(pagingRequest);
+            var sqlTotalCount = GetSqlGetTotalCountPaging(pagingRequest);
+
+            var queriedUsers = (await connection.QueryAsync<User>(sql: sqlSelect, commandType: System.Data.CommandType.Text)).ToList();
+            int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text);
+
+            var sqlOrderSelect = "select * from purchase_order where user_id=@userId"; // TODO: dung ham paging tu orderRepository de cai tien hieu nang
+            var userDtos = new List<UserDto>();
+            foreach (var user in queriedUsers)
             {
-                conn.Open();
+                var userDto = _mapper.Map<UserDto>(user);
 
-                // build sql
-                var sql = GetSqlGetPaging(pagingRequest);
+                var queriedOrders = (await connection.QueryAsync<Order>(sql: sqlOrderSelect, commandType: System.Data.CommandType.Text, param: new { @userId = user.Id })).ToList();
+                var orderDtos = queriedOrders.Select((order) => _mapper.Map<OrderDto>(order)).ToList();
 
-                var users = await conn.QueryAsync<User>(sql: sql, commandType: System.Data.CommandType.Text);
-
-                var items = users.ToList().Select(user => _mapper.Map<UserDto>(user)).ToList();
-                var pagingResponse = new PagingResponse<UserDto>();
-                pagingResponse.PageSize = pagingRequest.PageSize;
-                pagingResponse.PageIndex = pagingRequest.PageIndex;
-                pagingResponse.Items = items;
-
-                return pagingResponse;
+                userDto.Orders = orderDtos;
+                userDtos.Add(userDto);
             }
+
+            var response = new PagingResponse<UserDto>();
+            response.Items = userDtos;
+            response.TotalRecord = totalCount;
+
+            return response;
         }
 
-        protected override string GetSqlGetPaging(PagingRequest pagingRequest)
+        public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
-
             var sql = "select * from user where 1=1";
 
-            if (pagingRequest is UserPagingRequest userPagingRequest)
+            if (pagingRequest is UserPagingRequest p)
             {
-                if (!string.IsNullOrEmpty(userPagingRequest.UserName))
+                if (!string.IsNullOrEmpty(p.FilterValue))
                 {
-                    sql += $" and user_name like '%{userPagingRequest.UserName}%'";
-                }
-                else if (!string.IsNullOrEmpty(userPagingRequest.Email))
-                {
-                    sql += $" and email like '%{userPagingRequest.Email}%'";
-                }
-                else if (!string.IsNullOrEmpty(userPagingRequest.PhoneNumber))
-                {
-                    sql += $" and phone like '%{userPagingRequest.PhoneNumber}%'";
-                }
+                    sql += " and (";
+                    sql += $" user_name like '%{p.FilterValue}%' ";
+                    sql += $" or email like '%{p.FilterValue}%' ";
+                    sql += $" or phone like '%{p.FilterValue}%' ";
+                    sql += " ) ";
 
-
-                //sql += " order by ";
-                //userPagingRequest.Sorts.ForEach(sort =>
-                //{
-                //    sql += $" {sort.Field} {sort.SortDirection},";
-                //});
-                //sql.Remove(sql.Length - 1); // bo dau phay cuoi
+                }
             }
-
-
 
             int limit = pagingRequest.PageSize;
             int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
+            sql += " order by updated_at desc, created_at desc ";
             sql += $" limit {limit} offset {offset}";
+
+            return sql;
+        }
+
+        public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
+        {
+            var sql = "select * from user where 1=1";
+
+            if (pagingRequest is UserPagingRequest p)
+            {
+                if (!string.IsNullOrEmpty(p.FilterValue))
+                {
+                    sql += " and (";
+                    sql += $" user_name like '%{p.FilterValue}%' ";
+                    sql += $" or email like '%{p.FilterValue}%' ";
+                    sql += $" or phone like '%{p.FilterValue}%' ";
+                    sql += " ) ";
+
+                }
+            }
 
             return sql;
         }

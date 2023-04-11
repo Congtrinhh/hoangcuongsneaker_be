@@ -7,6 +7,7 @@ using AutoMapper;
 using HoangCuongSneaker.Core.Model;
 using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Core.Model.Admin.Product;
+using HoangCuongSneaker.Core.Model.Admin.SupplyBill;
 
 namespace HoangCuongSneaker.Core.Utility
 {
@@ -29,6 +30,10 @@ namespace HoangCuongSneaker.Core.Utility
 
                 cfg.CreateMap<ProductInventory, ProductInventoryDto>();
                 cfg.CreateMap<ProductInventoryDto, ProductInventory>();
+                cfg.CreateMap<SupplyBill, SupplyBillDto>();
+                cfg.CreateMap<SupplyBillDto, SupplyBill>();
+                cfg.CreateMap<ProductSupplyBill, ProductSupplyBillDto>();
+                cfg.CreateMap<ProductSupplyBillDto, ProductSupplyBill>();
 
             });
 

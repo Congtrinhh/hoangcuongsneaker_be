@@ -254,10 +254,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
             connection.Open();
 
-            var sql = GetSqlGetPaging(pagingRequest);
+            var sqlPaging = GetSqlGetPaging(pagingRequest);
             var sqlTotalCount = GetSqlGetTotalCountPaging(pagingRequest);
 
-            var products = (await connection.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
+            var products = (await connection.QueryAsync<Product>(sql: sqlPaging, commandType: System.Data.CommandType.Text)).ToList();
             int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text);
             if (products.Count > 0)
             {
@@ -304,53 +304,94 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
         public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
-            var sql = $"select * from product p ";
+            var sql = "select p.id, p.name, p.price, p.brand_id,p.description, p.is_hot, p.is_best_seller, p.is_active  from product p ";
 
             if (pagingRequest is ProductPagingRequest p)
             {
-                if (p.ColorIds.Count > 0 || p.SizeIds.Count > 0)
+                if (p.ColorIds?.Count > 0 || p.SizeIds?.Count > 0 || p.Gender.HasValue)
                 {
                     sql += " join product_inventory pi on p.id=pi.product_id ";
                 }
-                if (p.ColorIds.Count > 0)
+                if (p.ColorIds?.Count > 0)
                 {
                     sql += " join color c on c.id=pi.color_id ";
                 }
-                if (p.SizeIds.Count > 0)
+                if (p.SizeIds?.Count > 0)
                 {
                     sql += " join size s on s.id=pi.size_id ";
                 }
 
                 sql += " where 1 = 1 ";
 
-                if (p.ColorIds.Count > 0)
+                if (p.ColorIds?.Count > 0)
                 {
-                    string colorIdsString = string.Empty;
-                    sql += $" and c.id in ({p.ColorIds})";
+                    var subSql = " and c.id in (";
+                    foreach (var id in p.ColorIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
                 }
 
+                if (p.SizeIds?.Count > 0)
+                {
+                    var subSql = " and s.id in (";
+                    foreach (var id in p.SizeIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
+                }
+
+                if (p.BrandIds?.Count > 0)
+                {
+                    var subSql = " and p.brand_id in (";
+                    foreach (var id in p.BrandIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
+                }
 
                 if (!string.IsNullOrEmpty(p.FilterValue))
                 {
-                    sql += $" and name like '%{p.FilterValue}%'";
+                    sql += $" and p.name like '%{p.FilterValue}%'";
                 }
                 if (p.IsHot.HasValue)
                 {
-                    sql += $" and is_hot={p.IsHot}";
+                    sql += $" and p.is_hot={p.IsHot}";
                 }
                 if (p.IsBestSeller.HasValue)
                 {
-                    sql += $" and is_best_seller={p.IsBestSeller}";
+                    sql += $" and p.is_best_seller={p.IsBestSeller}";
                 }
                 if (p.PriceRangeFilters?.Count > 0)
                 {
                     sql += GetSqlPriceRange(p.PriceRangeFilters);
                 }
+                if (p.IsActive !=  null)
+                {
+                    sql += $" and p.is_active={p.IsActive}";
+                }
+                if (p.Gender.HasValue)
+                {
+                    sql += $" and pi.gender={(int)p.Gender.Value}";
+                }
             }
 
+            sql += " group by p.id ";
             int limit = pagingRequest.PageSize;
             int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
-            sql += " order by updated_at desc, created_at desc ";
+            sql += " order by p.`updated_at` desc, p.`created_at` desc ";
             sql += $" limit {limit} offset {offset}";
 
             return sql;
@@ -365,45 +406,6 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         {
             if (priceRangeFilters is null) return string.Empty;
             if (priceRangeFilters.Count == 0) return string.Empty;
-
-            //decimal startPrice=0, endPrice=0;
-
-            //var sql = " and ";
-
-            //priceRangeFilters.ForEach(priceRange =>
-            //{
-            //    switch (priceRange)
-            //    {
-            //        case PriceRangeFilterEnum.LessThanOneMillion:
-            //            startPrice = 0;
-            //            endPrice = 1_000_000;
-            //            break;
-            //        case PriceRangeFilterEnum.OneMillionToTwoMillion:
-            //            startPrice = 1_000_000;
-            //            endPrice = 2_000_000;
-            //            break;
-            //        case PriceRangeFilterEnum.TwoMillionToThreeMillion:
-            //            startPrice = 2_000_000;
-            //            endPrice = 3_000_000;
-            //            break;
-            //        case PriceRangeFilterEnum.ThreeMillionToFiveMillion:
-            //            startPrice = 3_000_000;
-            //            endPrice = 5_000_000;
-            //            break;
-            //        case PriceRangeFilterEnum.GreaterThanFiveMillion:
-            //            startPrice = 5_000_000;
-            //            endPrice = decimal.MaxValue;
-            //            break;
-            //    }
-            //    sql += $" price between {startPrice} and {endPrice} or";
-            //});
-            //if (sql.EndsWith("or"))
-            //{
-            //    // bo or
-            //    int index = sql.LastIndexOf("or");
-            //    sql = sql.Substring(index);
-            //}
-            //return sql;
 
             decimal minPrice = decimal.MaxValue, maxPrice = decimal.MinValue;
 
@@ -433,33 +435,96 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         break;
                 }
             });
-            var sql = $" and price between {minPrice} and {maxPrice} ";
+            var sql = $" and p.price between {minPrice} and {maxPrice} ";
             return sql;
         }
 
         public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
         {
-            var sql = "select count(1) from product where 1=1";
+            var sql = "select COUNT(1) OVER () AS TotalRecords from product p ";
 
             if (pagingRequest is ProductPagingRequest p)
             {
+                if (p.ColorIds?.Count > 0 || p.SizeIds?.Count > 0 || p.Gender.HasValue)
+                {
+                    sql += " join product_inventory pi on p.id=pi.product_id ";
+                }
+                if (p.ColorIds?.Count > 0)
+                {
+                    sql += " join color c on c.id=pi.color_id ";
+                }
+                if (p.SizeIds?.Count > 0)
+                {
+                    sql += " join size s on s.id=pi.size_id ";
+                }
+
+                sql += " where 1 = 1 ";
+
+                if (p.ColorIds?.Count > 0)
+                {
+                    var subSql = " and c.id in (";
+                    foreach (var id in p.ColorIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
+                }
+
+                if (p.SizeIds?.Count > 0)
+                {
+                    var subSql = " and s.id in (";
+                    foreach (var id in p.SizeIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
+                }
+
+                if (p.BrandIds?.Count > 0)
+                {
+                    var subSql = " and p.brand_id in (";
+                    foreach (var id in p.BrandIds)
+                    {
+                        subSql += $"{id},";
+                    }
+                    int index = subSql.LastIndexOf(",");
+                    subSql = subSql.Substring(0, index);
+                    subSql += ")";
+                    sql += subSql;
+                }
+
                 if (!string.IsNullOrEmpty(p.FilterValue))
                 {
-                    sql += $" and name like '%{p.FilterValue}%'";
+                    sql += $" and p.name like '%{p.FilterValue}%'";
                 }
                 if (p.IsHot.HasValue)
                 {
-                    sql += $" and is_hot={p.IsHot}";
+                    sql += $" and p.is_hot={p.IsHot}";
                 }
                 if (p.IsBestSeller.HasValue)
                 {
-                    sql += $" and is_best_seller={p.IsBestSeller}";
+                    sql += $" and p.is_best_seller={p.IsBestSeller}";
                 }
                 if (p.PriceRangeFilters?.Count > 0)
                 {
                     sql += GetSqlPriceRange(p.PriceRangeFilters);
                 }
+                if (p.IsActive != null)
+                {
+                    sql += $" and p.is_active={p.IsActive}";
+                }
+                if (p.Gender.HasValue)
+                {
+                    sql += $" and pi.gender={(int)p.Gender.Value}";
+                }
             }
+            sql += " group by p.id ";
             return sql;
         }
 

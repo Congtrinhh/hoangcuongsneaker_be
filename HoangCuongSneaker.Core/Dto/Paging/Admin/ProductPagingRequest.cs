@@ -27,5 +27,9 @@ namespace HoangCuongSneaker.Core.Dto.Paging.Admin
         public List<PriceRangeFilterEnum>? PriceRangeFilters { get; set; } = new List<PriceRangeFilterEnum>();
         public bool? IsHot { get; set; }
         public bool? IsBestSeller { get; set; }
+        public bool? IsActive { get; set; }
+        public GenderEnum? Gender { get; set; }
+        public int? BrandId { get; set; } = 0;
+        public List<int>? BrandIds { get; set; } = new List<int>();
     }
 }

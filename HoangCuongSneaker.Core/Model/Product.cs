@@ -29,5 +29,8 @@ namespace HoangCuongSneaker.Core.Model
         public int BrandId { get; set; }
         public bool? IsActive { get; set; } = true;
         public string? Description { get; set; }
+        public bool? IsHot { get; set; } = false;
+        public bool? IsBestSeller { get; set; } = false;
+        public decimal? Price { get; set; } = 0;
     }
 }

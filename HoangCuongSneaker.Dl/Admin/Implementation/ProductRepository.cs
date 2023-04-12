@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Dapper;
 using HoangCuongSneaker.Core.Utility;
 using HoangCuongSneaker.Core.Dto.Paging.Admin;
+using HoangCuongSneaker.Core.Enum;
 
 namespace HoangCuongSneaker.Repository.Admin.Implementation
 {
@@ -38,6 +39,8 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             var procInsertProduct = "proc_product_insert";
 
             var productToInsert = _mapper.Map<Product>(model);
+            productToInsert.Price = model.ProductInventories.Count > 0 ? model.ProductInventories[0].SellPrice : 0; // set giá mặc định cho sản phẩm
+
             var insertedProductId = await connection.ExecuteScalarAsync<int>(sql: procInsertProduct, commandType: System.Data.CommandType.StoredProcedure, param: productToInsert, transaction: transaction);
 
             if (insertedProductId > 0)
@@ -255,7 +258,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             var sqlTotalCount = GetSqlGetTotalCountPaging(pagingRequest);
 
             var products = (await connection.QueryAsync<Product>(sql: sql, commandType: System.Data.CommandType.Text)).ToList();
-            int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text); 
+            int totalCount = await connection.QueryFirstOrDefaultAsync<int>(sql: sqlTotalCount, commandType: System.Data.CommandType.Text);
             if (products.Count > 0)
             {
                 var productsResult = new List<ProductDto>();
@@ -301,13 +304,47 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
         public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
-            var sql = $"select * from product where 1=1";
+            var sql = $"select * from product p ";
 
-            if (pagingRequest is ProductPagingRequest productPagingRequest)
+            if (pagingRequest is ProductPagingRequest p)
             {
-                if (!string.IsNullOrEmpty(productPagingRequest.FilterValue))
+                if (p.ColorIds.Count > 0 || p.SizeIds.Count > 0)
                 {
-                    sql += $" and name like '%{productPagingRequest.FilterValue}%'";
+                    sql += " join product_inventory pi on p.id=pi.product_id ";
+                }
+                if (p.ColorIds.Count > 0)
+                {
+                    sql += " join color c on c.id=pi.color_id ";
+                }
+                if (p.SizeIds.Count > 0)
+                {
+                    sql += " join size s on s.id=pi.size_id ";
+                }
+
+                sql += " where 1 = 1 ";
+
+                if (p.ColorIds.Count > 0)
+                {
+                    string colorIdsString = string.Empty;
+                    sql += $" and c.id in ({p.ColorIds})";
+                }
+
+
+                if (!string.IsNullOrEmpty(p.FilterValue))
+                {
+                    sql += $" and name like '%{p.FilterValue}%'";
+                }
+                if (p.IsHot.HasValue)
+                {
+                    sql += $" and is_hot={p.IsHot}";
+                }
+                if (p.IsBestSeller.HasValue)
+                {
+                    sql += $" and is_best_seller={p.IsBestSeller}";
+                }
+                if (p.PriceRangeFilters?.Count > 0)
+                {
+                    sql += GetSqlPriceRange(p.PriceRangeFilters);
                 }
             }
 
@@ -319,15 +356,108 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             return sql;
         }
 
+        /// <summary>
+        /// gen đoạn sql filter sản phẩm theo khoảng giá
+        /// </summary>
+        /// <param name="priceRangeFilter"></param>
+        /// <returns></returns>
+        private string GetSqlPriceRange(List<PriceRangeFilterEnum>? priceRangeFilters)
+        {
+            if (priceRangeFilters is null) return string.Empty;
+            if (priceRangeFilters.Count == 0) return string.Empty;
+
+            //decimal startPrice=0, endPrice=0;
+
+            //var sql = " and ";
+
+            //priceRangeFilters.ForEach(priceRange =>
+            //{
+            //    switch (priceRange)
+            //    {
+            //        case PriceRangeFilterEnum.LessThanOneMillion:
+            //            startPrice = 0;
+            //            endPrice = 1_000_000;
+            //            break;
+            //        case PriceRangeFilterEnum.OneMillionToTwoMillion:
+            //            startPrice = 1_000_000;
+            //            endPrice = 2_000_000;
+            //            break;
+            //        case PriceRangeFilterEnum.TwoMillionToThreeMillion:
+            //            startPrice = 2_000_000;
+            //            endPrice = 3_000_000;
+            //            break;
+            //        case PriceRangeFilterEnum.ThreeMillionToFiveMillion:
+            //            startPrice = 3_000_000;
+            //            endPrice = 5_000_000;
+            //            break;
+            //        case PriceRangeFilterEnum.GreaterThanFiveMillion:
+            //            startPrice = 5_000_000;
+            //            endPrice = decimal.MaxValue;
+            //            break;
+            //    }
+            //    sql += $" price between {startPrice} and {endPrice} or";
+            //});
+            //if (sql.EndsWith("or"))
+            //{
+            //    // bo or
+            //    int index = sql.LastIndexOf("or");
+            //    sql = sql.Substring(index);
+            //}
+            //return sql;
+
+            decimal minPrice = decimal.MaxValue, maxPrice = decimal.MinValue;
+
+            priceRangeFilters.ForEach(priceRange =>
+            {
+                switch (priceRange)
+                {
+                    case PriceRangeFilterEnum.LessThanOneMillion:
+                        minPrice = 0;
+                        if (1_000_000 > maxPrice) maxPrice = 1_000_000;
+                        break;
+                    case PriceRangeFilterEnum.OneMillionToTwoMillion:
+                        if (1_000_000 < minPrice) minPrice = 1_000_000;
+                        if (2_000_000 > maxPrice) maxPrice = 2_000_000;
+                        break;
+                    case PriceRangeFilterEnum.TwoMillionToThreeMillion:
+                        if (2_000_000 < minPrice) minPrice = 2_000_000;
+                        if (3_000_000 > maxPrice) maxPrice = 3_000_000;
+                        break;
+                    case PriceRangeFilterEnum.ThreeMillionToFiveMillion:
+                        if (3_000_000 < minPrice) minPrice = 3_000_000;
+                        if (5_000_000 > maxPrice) maxPrice = 5_000_000;
+                        break;
+                    case PriceRangeFilterEnum.GreaterThanFiveMillion:
+                        if (5_000_000 < minPrice) minPrice = 5_000_000;
+                        maxPrice = decimal.MaxValue;
+                        break;
+                }
+            });
+            var sql = $" and price between {minPrice} and {maxPrice} ";
+            return sql;
+        }
+
         public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
         {
             var sql = "select count(1) from product where 1=1";
 
-            if (pagingRequest is ProductPagingRequest productPagingRequest)
+            if (pagingRequest is ProductPagingRequest p)
             {
-                if (!string.IsNullOrEmpty(productPagingRequest.FilterValue))
+                if (!string.IsNullOrEmpty(p.FilterValue))
                 {
-                    sql += $" and name like '%{productPagingRequest.FilterValue}%'";
+                    sql += $" and name like '%{p.FilterValue}%'";
+                }
+                if (p.IsHot.HasValue)
+                {
+                    sql += $" and is_hot={p.IsHot}";
+                }
+                if (p.IsBestSeller.HasValue)
+                {
+                    sql += $" and is_best_seller={p.IsBestSeller}";
+                }
+                if (p.PriceRangeFilters?.Count > 0)
+                {
+                    sql += GetSqlPriceRange(p.PriceRangeFilters);
                 }
             }
             return sql;
@@ -346,6 +476,8 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 var sql = "proc_product_update";
 
                 var productToUpdate = _mapper.Map<Product>(model);
+                var firstProductInventory = model.ProductInventories.FirstOrDefault(item => item.ModelState != ModelStateEnum.Delete);
+                productToUpdate.Price = firstProductInventory?.SellPrice;// set giá mặc định cho sản phẩm
 
                 var affectedRows = await connection.ExecuteAsync(sql: sql, commandType: System.Data.CommandType.StoredProcedure, param: productToUpdate, transaction: transaction);
                 if (affectedRows > 0)

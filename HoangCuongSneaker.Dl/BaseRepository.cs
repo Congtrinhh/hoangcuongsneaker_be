@@ -57,6 +57,7 @@ namespace HoangCuongSneaker.Repository
             var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsert, commandType: System.Data.CommandType.StoredProcedure, param: model, transaction: transaction);
             if (insertedId != 0)
             {
+                model.Id = insertedId;
                 return model;
             }
             return null;

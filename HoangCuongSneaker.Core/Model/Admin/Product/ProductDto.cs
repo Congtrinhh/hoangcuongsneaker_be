@@ -1,4 +1,6 @@
 ﻿using HoangCuongSneaker.Core.Utility;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,21 +15,6 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
     public class ProductDto : BaseModel
     {
         public string Name { get; set; } = string.Empty;
-     
-        //private decimal price;
-        //public decimal Price
-        //{
-        //    get
-        //    {
-        //        decimal v = 0;
-        //        if (ProductInventories.FirstOrDefault() is not null)
-        //        {
-        //            v = ProductInventories.FirstOrDefault().SellPrice;
-        //        }
-        //        return v;
-        //    }
-        //    set { price = value; }
-        //}
         public List<ProductInventoryDto> ProductInventories { get; set; } = new List<ProductInventoryDto>();
         public List<Image> Images { get; set; } = new List<Image>();
         private string? slug;
@@ -36,10 +23,7 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
             get
             {
                 var str = string.Empty;
-                if (!string.IsNullOrWhiteSpace(Name))
-                {
-                    str = FunctionUtil.Slugify(Name);
-                }
+                if (!string.IsNullOrWhiteSpace(Name)) str = FunctionUtil.Slugify(Name);
                 return str;
             }
             set { slug = value; }
@@ -50,5 +34,6 @@ namespace HoangCuongSneaker.Core.Model.Admin.Product
         public bool? IsHot { get; set; } = false;
         public bool? IsBestSeller { get; set; } = false;
         public decimal? Price { get; set; } = 0;
+        public List<IFormFile>? ImageFiles { get; set; }
     }
 }

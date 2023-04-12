@@ -14,6 +14,7 @@ using Dapper;
 using HoangCuongSneaker.Core.Utility;
 using HoangCuongSneaker.Core.Dto.Paging.Admin;
 using HoangCuongSneaker.Core.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace HoangCuongSneaker.Repository.Admin.Implementation
 {
@@ -50,21 +51,28 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 var procInsertProductInventory = "proc_product_inventory_insert";
                 int insertedImageCount = 0, insertedProductInventoryCount = 0;
 
-                for (int i = 0; i < model.Images.Count; i++)
-                {
-                    var insertModel = model.Images[i];
-                    insertModel.ProductId = insertedProductId;
-                    var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: insertModel, transaction: transaction);
-                    if (insertedId > 0)
-                    {
-                        insertedImageCount++;
-                    }
-                }
-                if (insertedImageCount != model.Images.Count)
-                {
-                    transaction.Rollback();
-                    return null;
-                }
+                //for (int i = 0; i < model.ImageFiles?.Count; i++)
+                //{
+                //    var imageFile = model.ImageFiles[i];
+
+
+                //    var insertModel = new Image();
+                //    //insertModel.Content = 
+                //    insertModel.Desc = imageFile.FileName;
+                    
+                //    insertModel.ProductId = insertedProductId;
+
+                //    var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: insertModel, transaction: transaction);
+                //    if (insertedId > 0)
+                //    {
+                //        insertedImageCount++;
+                //    }
+                //}
+                //if (insertedImageCount != model.ImageFiles.Count)
+                //{
+                //    transaction.Rollback();
+                //    return null;
+                //}
 
                 for (int i = 0; i < model.ProductInventories.Count; i++)
                 {
@@ -93,6 +101,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             var newlyInsertedProduct = await Get(insertedProductId);
             if (newlyInsertedProduct != null)
             {
+                newlyInsertedProduct.Id = insertedProductId;
                 newlyInsertedProduct.Images = model.Images;
                 newlyInsertedProduct.ProductInventories = model.ProductInventories;
                 return newlyInsertedProduct;
@@ -378,7 +387,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 {
                     sql += GetSqlPriceRange(p.PriceRangeFilters);
                 }
-                if (p.IsActive !=  null)
+                if (p.IsActive != null)
                 {
                     sql += $" and p.is_active={p.IsActive}";
                 }
@@ -386,15 +395,35 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 {
                     sql += $" and pi.gender={(int)p.Gender.Value}";
                 }
+
+                sql += " group by p.id ";
+                int limit = pagingRequest.PageSize;
+                int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
+                sql += GetSqlOrderBy(p.SortOption);
+                sql += $" limit {limit} offset {offset}";
             }
 
-            sql += " group by p.id ";
-            int limit = pagingRequest.PageSize;
-            int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
-            sql += " order by p.`updated_at` desc, p.`created_at` desc ";
-            sql += $" limit {limit} offset {offset}";
-
             return sql;
+        }
+
+        private string GetSqlOrderBy(SortOptionEnum? sortOption)
+        {
+            if (sortOption == null || !sortOption.HasValue)
+                return " order by p.updated_at desc, p.created_at desc ";
+            else
+            {
+                var sql = " order by ";
+                switch (sortOption)
+                {
+                    case SortOptionEnum.PriceDesc:
+                        sql += " p.price desc, p.updated_at desc, p.created_at desc ";
+                        break;
+                    case SortOptionEnum.PriceAsc:
+                        sql += " p.price asc, p.updated_at desc, p.created_at desc ";
+                        break;
+                }
+                return sql;
+            }
         }
 
         /// <summary>
@@ -668,6 +697,41 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 return true;
             }
             return isSuccessful;
+        }
+
+        public async Task<int> CreateImages(int productId, IFormFileCollection filesFromRequest)
+        {
+            int count = 0;
+            var connection = GetSqlConnection();
+            connection.Open();
+            var transaction = connection.BeginTransaction();
+
+            using (var ms = new MemoryStream())
+            {
+                foreach (var file in filesFromRequest)
+                {
+                    file.CopyTo(ms);
+                    var fileBytes = ms.ToArray();
+                    string s = Convert.ToBase64String(fileBytes);
+                    var image = new Image();
+                    image.Content = fileBytes;
+                    image.ProductId = productId;
+                    var createdImage = await _imageRepository.Create(image, connection: connection, transaction: transaction);
+                    if (createdImage is not null && createdImage.Id > 0)
+                    {
+                        count++;
+                    }
+                }
+                if (count != filesFromRequest.Count )
+                {
+                    transaction.Rollback();
+                    return 0;
+                } else
+                {
+                    transaction.Commit();
+                    return count;
+                }
+            }
         }
     }
 

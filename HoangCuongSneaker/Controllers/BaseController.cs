@@ -55,12 +55,13 @@ namespace HoangCuongSneaker.Api.Controllers
         // POST api/<BaseController>
         [HttpPost]
         public virtual async Task<ApiResponse> Create([FromBody] T model)
-        {
+        { 
             var response = new ApiResponse();
             try
             {
                 T? createdModel = await _baseRepository.Create(model);
-                response.OnSuccess(data: model);
+                if (createdModel is not null) response.OnSuccess(data: createdModel);
+                else throw new Exception("Có lỗi xảy ra");
             }
             catch (Exception e)
             {

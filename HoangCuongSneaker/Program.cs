@@ -50,6 +50,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Sending image, files..
+app.UseStaticFiles();
+
 // CORS
 app.UseCors(o => o.AllowAnyMethod().AllowAnyOrigin().AllowAnyHeader());
 app.UseAuthorization();

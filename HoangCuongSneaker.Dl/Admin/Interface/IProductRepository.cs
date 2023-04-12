@@ -1,6 +1,7 @@
 ﻿using HoangCuongSneaker.Core;
 using HoangCuongSneaker.Core.Dto.Paging;
 using HoangCuongSneaker.Core.Model.Admin.Product;
+using Microsoft.AspNetCore.Http;
 using MySqlConnector;
 using System;
 using System.Collections.Generic;
@@ -22,5 +23,6 @@ namespace HoangCuongSneaker.Repository.Admin.Interface
         Task<ProductDto> GetBySlug(string slug, MySqlConnection connection = null); 
 
         Task<PagingResponse<ProductDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null);
+        Task<int> CreateImages(int productId, IFormFileCollection filesFromRequest);
     }
 }

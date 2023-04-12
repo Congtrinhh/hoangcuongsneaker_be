@@ -31,5 +31,9 @@ namespace HoangCuongSneaker.Core.Dto.Paging.Admin
         public GenderEnum? Gender { get; set; }
         public int? BrandId { get; set; } = 0;
         public List<int>? BrandIds { get; set; } = new List<int>();
+        /// <summary>
+        /// sort - chỉ đáp ứng sort theo 1 tiêu chí
+        /// </summary>
+        public SortOptionEnum? SortOption { get; set; }
     }
 }

@@ -25,27 +25,22 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
 
         [HttpPost]
         [Route("images/{productId}")]
-        public async Task<ApiResponse> CreateImages([FromForm] IFormFile file, int productId)
+        public async Task<ApiResponse> CreateImages([FromForm] List<IFormFile> files, int productId)
         {
-            int count = 0;
-            using (var ms = new MemoryStream())
-            {
-                file.CopyTo(ms);
-                var fileBytes = ms.ToArray();
-                string s = Convert.ToBase64String(fileBytes);
+            // nhận list file thông qua đối tượng request
+            var filesFromRequest = HttpContext.Request.Form.Files;
 
-                var image = new Image();
-                image.Content = fileBytes;
-                image.ProductId = productId;
-                var createdImage = await _imageRepository.Create(image);
-                if (createdImage is not null && createdImage.Id > 0)
-                {
-                    count++;
-                }
-                var response = new ApiResponse();
-                response.Data.Add(count);
-                return response;
+            var response = new ApiResponse();
+            try
+            {
+                int affectedRows = await _productRepository.CreateImages(productId, filesFromRequest);
+                response.OnSuccess(data: affectedRows);
             }
+            catch (Exception e)
+            {
+                response.OnFailure(e);
+            }
+            return response; 
         }
 
         [HttpGet("by-slug/{slug}")]
@@ -54,7 +49,7 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
             var response = new ApiResponse();
             try
             {
-                var product =  await ((IProductRepository)_baseRepository).GetBySlug(slug);
+                var product = await ((IProductRepository)_baseRepository).GetBySlug(slug);
                 response.OnSuccess(data: product);
             }
             catch (Exception e)
@@ -78,7 +73,6 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
                 response.OnFailure(e);
             }
             return response;
-
-        }
+        } 
     }
 }

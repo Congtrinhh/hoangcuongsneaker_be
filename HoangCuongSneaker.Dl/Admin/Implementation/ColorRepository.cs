@@ -14,5 +14,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
         public ColorRepository(IConfiguration configuration) : base(configuration)
         {
         }
+
+        public override string GetSqlGetAllOrderBy()
+        {
+            return " order by name ";
+        }
     }
 }

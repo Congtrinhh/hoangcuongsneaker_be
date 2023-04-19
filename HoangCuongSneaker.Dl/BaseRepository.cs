@@ -88,6 +88,7 @@ namespace HoangCuongSneaker.Repository
             connection = connection ?? GetSqlConnection();
 
             string sql = $"select * from {_tableName}";
+            sql += GetSqlGetAllOrderBy();
             var models = await connection.QueryAsync<T>(sql: sql, commandType: System.Data.CommandType.Text);
             if (models is not null)
             {
@@ -95,6 +96,11 @@ namespace HoangCuongSneaker.Repository
             }
 
             return new List<T>();
+        }
+
+        public virtual string GetSqlGetAllOrderBy()
+        {
+            return " order by created_at desc, updated_at desc";
         }
 
         /// <summary>

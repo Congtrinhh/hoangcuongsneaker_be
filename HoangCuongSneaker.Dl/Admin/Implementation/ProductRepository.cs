@@ -59,7 +59,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 //    var insertModel = new Image();
                 //    //insertModel.Content = 
                 //    insertModel.Desc = imageFile.FileName;
-                    
+
                 //    insertModel.ProductId = insertedProductId;
 
                 //    var insertedId = await connection.ExecuteScalarAsync<int>(sql: procInsertImage, commandType: System.Data.CommandType.StoredProcedure, param: insertModel, transaction: transaction);
@@ -313,14 +313,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
         public override string GetSqlGetPaging(PagingRequest pagingRequest)
         {
-            var sql = "select p.id, p.name, p.price, p.brand_id,p.description, p.is_hot, p.is_best_seller, p.is_active  from product p ";
+            var sql = "select p.id, p.name, p.price, p.brand_id,p.description, p.is_hot, p.is_best_seller, p.is_active  from product p join product_inventory pi on p.id=pi.product_id ";
 
             if (pagingRequest is ProductPagingRequest p)
             {
-                if (p.ColorIds?.Count > 0 || p.SizeIds?.Count > 0 || p.Gender.HasValue)
-                {
-                    sql += " join product_inventory pi on p.id=pi.product_id ";
-                }
                 if (p.ColorIds?.Count > 0)
                 {
                     sql += " join color c on c.id=pi.color_id ";
@@ -396,7 +392,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     sql += $" and pi.gender={(int)p.Gender.Value}";
                 }
 
-                sql += " group by p.id ";
+                sql += " group by p.id having COUNT(pi.id)>0 ";
                 int limit = pagingRequest.PageSize;
                 int offset = pagingRequest.PageSize * pagingRequest.PageIndex;
                 sql += GetSqlOrderBy(p.SortOption);
@@ -470,14 +466,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
         public override string GetSqlGetTotalCountPaging(PagingRequest pagingRequest)
         {
-            var sql = "select COUNT(1) OVER () AS TotalRecords from product p ";
+            var sql = "select COUNT(1) OVER () AS TotalRecords from product p join product_inventory pi on p.id=pi.product_id ";
 
             if (pagingRequest is ProductPagingRequest p)
             {
-                if (p.ColorIds?.Count > 0 || p.SizeIds?.Count > 0 || p.Gender.HasValue)
-                {
-                    sql += " join product_inventory pi on p.id=pi.product_id ";
-                }
                 if (p.ColorIds?.Count > 0)
                 {
                     sql += " join color c on c.id=pi.color_id ";
@@ -553,7 +545,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     sql += $" and pi.gender={(int)p.Gender.Value}";
                 }
             }
-            sql += " group by p.id ";
+            sql += " group by p.id having COUNT(pi.id)>0 ";
             return sql;
         }
 
@@ -706,9 +698,10 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             connection.Open();
             var transaction = connection.BeginTransaction();
 
-            using (var ms = new MemoryStream())
+
+            foreach (var file in filesFromRequest)
             {
-                foreach (var file in filesFromRequest)
+                using (var ms = new MemoryStream())
                 {
                     file.CopyTo(ms);
                     var fileBytes = ms.ToArray();
@@ -722,15 +715,16 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                         count++;
                     }
                 }
-                if (count != filesFromRequest.Count )
-                {
-                    transaction.Rollback();
-                    return 0;
-                } else
-                {
-                    transaction.Commit();
-                    return count;
-                }
+            }
+            if (count != filesFromRequest.Count)
+            {
+                transaction.Rollback();
+                return 0;
+            }
+            else
+            {
+                transaction.Commit();
+                return count;
             }
         }
     }

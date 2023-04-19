@@ -13,7 +13,7 @@ namespace HoangCuongSneaker.Repository.Admin.Interface
 {
     public interface IUserRepository: IBaseRepository<UserDto>
     {
-        Task<UserDto> GetByUserName(string userName, MySqlConnection connection = null);
+        Task<UserDto?> GetByUserName(string userName, MySqlConnection connection = null);
         Task<PagingResponse<UserDto>> GetPaging(PagingRequest pagingRequest, MySqlConnection connection = null);
     }
 }

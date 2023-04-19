@@ -57,28 +57,34 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             }
         }
 
-        public override async Task<UserDto> Create(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
+        public override async Task<UserDto?> Create(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
                 conn.Open();
 
+                var userFromDb = await GetByUserName(model.UserName);
+                if (userFromDb is not null) return null;
+
                 var procUserInsert = "proc_user_insert";
 
                 var user = _mapper.Map<User>(model);
+                string passwordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
+                user.Password = passwordHash;
 
                 var insertedUserId = await conn.ExecuteScalarAsync<int>(sql: procUserInsert, commandType: System.Data.CommandType.StoredProcedure, param: user);
                 if (insertedUserId > 0)
                 {
-                    var insertedUser = Get(insertedUserId);
-                    var modelResult = _mapper.Map<UserDto>(insertedUser);
+                    model.Id = insertedUserId;
+                    var modelResult = _mapper.Map<UserDto>(model);
+                    modelResult.Password = string.Empty;// không trả về thông tin mật khẩu
                     return modelResult;
                 }
-                return new UserDto();
+                return null;
             }
         }
 
-        public override async Task<UserDto> Update(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
+        public override async Task<UserDto?> Update(UserDto model, MySqlConnection connection = null, MySqlTransaction transaction = null)
         {
             using (var conn = new MySqlConnection(_connectionString))
             {
@@ -88,15 +94,14 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
                 var user = _mapper.Map<User>(model);
 
-                var updatedUserId = await conn.ExecuteScalarAsync<int>(sql: procUserUpdate, commandType: System.Data.CommandType.StoredProcedure, param: user);
-                if (updatedUserId > 0)
+                var affectedRows = await conn.ExecuteAsync(sql: procUserUpdate, commandType: System.Data.CommandType.StoredProcedure, param: user);
+                if (affectedRows > 0)
                 {
-                    var updatedUser = await Get(updatedUserId);
+                    var updatedUser = await Get(user.Id);
                     var modelResult = _mapper.Map<UserDto>(updatedUser);
                     return modelResult;
                 }
-                // throw exception or error response instead
-                return new UserDto();
+                return null;
             }
         }
 
@@ -175,12 +180,8 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
 
             return sql;
         }
-
-        public Task<UserDto> GetByUserName(string userName)
-        {
-            throw new NotImplementedException();
-        }
-        public async Task<UserDto> GetByUserName(string userName, MySqlConnection connection = null)
+ 
+        public async Task<UserDto?> GetByUserName(string userName, MySqlConnection connection = null)
         {
             connection = connection ?? GetSqlConnection();
             connection.Open();
@@ -193,10 +194,7 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                 var modelResult = _mapper.Map<UserDto>(user);
                 return modelResult;
             }
-            else
-            {
-                return new UserDto();
-            }
+            return null;
         }
     }
 }

@@ -15,7 +15,8 @@ namespace HoangCuongSneaker.Core.Model
         public bool? IsActive { get; set; } = true;
         public string? Email { get; set; } = string.Empty;
         public string? Phone { get; set; } = string.Empty;
-        public bool? EmailVerified { get; set; } = true;
-        public string? VerificationCode { get; set; } = string.Empty;
+        public string? Role { get; set; } = Enum.Role.User;
+        //public bool? EmailVerified { get; set; } = true;
+        //public string? VerificationCode { get; set; } = string.Empty;
     }
 }

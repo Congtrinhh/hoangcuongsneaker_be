@@ -2,10 +2,10 @@
 using HoangCuongSneaker.Core.Dto;
 using HoangCuongSneaker.Core.Dto.Paging.Admin;
 using HoangCuongSneaker.Core.Model;
-using HoangCuongSneaker.Core.Model.Admin.Product;
-using HoangCuongSneaker.Core.Model.FileUpload;
+using HoangCuongSneaker.Core.Model.Admin.Product; 
 using HoangCuongSneaker.Repository;
 using HoangCuongSneaker.Repository.Admin.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
@@ -23,6 +23,7 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
             _productRepository = productRepository;
         }
 
+        [Authorize(Roles = "admin")]
         [HttpPost]
         [Route("images/{productId}")]
         public async Task<ApiResponse> CreateImages([FromForm] List<IFormFile> files, int productId)

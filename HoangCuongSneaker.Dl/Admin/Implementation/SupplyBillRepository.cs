@@ -157,14 +157,33 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     productSupplyBillToInsert.SupplyBillId = insertedId;
                     var insertedProductSupplyBill = await _productSupplyBillRepository.Create(productSupplyBillToInsert, connection, transaction);
 
-                    if (insertedProductSupplyBill is not null)
-                        createdItemCount++;
+                    if (insertedProductSupplyBill is not null) createdItemCount++;
                 }
                 if (createdItemCount != model.SupplyBillItems.Count)
                 {
                     transaction.Rollback();
                     return null;
                 }
+
+                // update số lượng sp theo sl mới nhập
+                int updatedProductInventoryCount = 0;
+                foreach (var productSupplyBillDto in model.SupplyBillItems)
+                {
+                    var productInventoryId = productSupplyBillDto.ProductInventory.Id;
+                    var productInventory = await _productInventoryRepository.Get(productInventoryId);
+                    if (productInventory is not null)
+                    {
+                        productInventory.Quantity += productSupplyBillDto.Quantity;
+                        var updatedProductInventory = await _productInventoryRepository.Update(productInventory, connection, transaction);
+                        if (updatedProductInventory is not null) updatedProductInventoryCount++;
+                    }
+                }
+                if (updatedProductInventoryCount != model.SupplyBillItems.Count)
+                {
+                    transaction.Rollback();
+                    return null;
+                }
+
                 transaction.Commit();
                 return model;
             }

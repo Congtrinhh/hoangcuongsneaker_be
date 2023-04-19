@@ -5,6 +5,7 @@ using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Repository.Admin.Interface;
 using HoangCuongSneaker.Repository.Admin.Interface.Address;
 using HoangCuongSneaker.Service.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -91,6 +92,7 @@ namespace HoangCuongSneaker.Api.Controllers.User
             return response;
         }
 
+        [Authorize]
         [HttpPost("paging")]
         public async Task<ApiResponse> GetPaging([FromBody] OrderPagingRequest pagingRequest)
         {

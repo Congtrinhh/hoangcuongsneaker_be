@@ -14,25 +14,35 @@ using System.Threading.Tasks;
 
 namespace HoangCuongSneaker.Service.Admin
 {
-    public class OrderService: BaseService<OrderDto>, IOrderService
+    public class OrderService : BaseService<OrderDto>, IOrderService
     {
         protected IProductInventoryRepository _productInventoryRepository;
-        protected IOrderRepository _orderRepository; 
+        protected IOrderRepository _orderRepository;
 
         public OrderService(IConfiguration configuration, IOrderRepository orderRepository, IProductInventoryRepository productInventoryRepository) : base(configuration, orderRepository)
-        { 
+        {
             _productInventoryRepository = productInventoryRepository;
             _orderRepository = orderRepository;
         }
 
-        public async Task<OrderDto> Create(OrderDto model)
+        public async Task<OrderDto?> Create(OrderDto model)
         {
             var connection = GetSqlConnection();
             // check sl đủ bán
-            var res = await _orderRepository.Create(model, connection);
-            return res;
+            var itemNotEnoughQuantity = await FindOutOfStockPrductInventory(model.OrderItems);
+            if (itemNotEnoughQuantity == null)
+            {
+                var createdOrder = await _orderRepository.Create(model, connection);
+
+                return createdOrder;
+            }
+            else
+            {
+                var message = $"Sản phẩm {itemNotEnoughQuantity.Name} chỉ còn lại {itemNotEnoughQuantity.Quantity} sản phẩm, vui lòng kiểm tra lại";
+                throw new Exception(message);
+            }
         }
-        
+
         /// <summary>
         /// Tìm trong ds sản phẩm trong giỏ hàng 1 sản phẩm đã hết hàng
         /// </summary>
@@ -48,6 +58,7 @@ namespace HoangCuongSneaker.Service.Admin
             {
                 var item = orderItems[i];
                 var productInventoryFromDb = await _productInventoryRepository.Get(item.Id);
+                if (productInventoryFromDb == null) throw new Exception("Có lỗi xảy ra, không tìm thấy sản phẩm");
                 if (productInventoryFromDb.Quantity < item.Quantity)
                 {
                     var result = _mapper.Map<ProductInventory, ProductInventoryDto>(productInventoryFromDb);

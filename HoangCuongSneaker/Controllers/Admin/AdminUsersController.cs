@@ -1,8 +1,10 @@
 ﻿using HoangCuongSneaker.Core.Dto;
 using HoangCuongSneaker.Core.Dto.Paging.Admin;
+using HoangCuongSneaker.Core.Enum;
 using HoangCuongSneaker.Core.Model.Admin.Order;
 using HoangCuongSneaker.Repository;
 using HoangCuongSneaker.Repository.Admin.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +18,7 @@ namespace HoangCuongSneaker.Api.Controllers.Admin
             _userRepository = userRepository;
         }
 
+        [Authorize(Roles = "admin") ]
         [HttpPost("paging")]
         public async Task<ApiResponse> GetPaging(UserPagingRequest pagingRequest)
         {

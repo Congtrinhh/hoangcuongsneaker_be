@@ -20,9 +20,11 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
     public class OrderRepository : BaseRepository<OrderDto>, IOrderRepository
     {
         protected IUserRepository _userRepository;
-        public OrderRepository(IConfiguration configuration, IUserRepository userRepository) : base(configuration)
+        protected IProductInventoryRepository _productInventoryRepository;
+        public OrderRepository(IConfiguration configuration, IUserRepository userRepository, IProductInventoryRepository productInventoryRepository) : base(configuration)
         {
             _userRepository = userRepository;
+            _productInventoryRepository = productInventoryRepository;
             _tableName = "purchase_order";
         }
 
@@ -230,9 +232,17 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
             {
                 // insert order
                 var procOrderInsert = "proc_purchase_order_insert";
+
+
                 var orderParam = _mapper.Map<OrderDto, Order>(model); // need to convert because procedure need to receive needed model 
                 orderParam.IsActive = true;
                 orderParam.ShippedAt = DateTime.MinValue;
+                decimal billPrice = 0;
+                foreach (var item in model.OrderItems)
+                {
+                    billPrice += item.Quantity * item.Price;
+                }
+                orderParam.BillPrice = billPrice;
 
                 var insertedOrderId = await connection.ExecuteScalarAsync<int>(sql: procOrderInsert, commandType: System.Data.CommandType.StoredProcedure, param: orderParam, transaction: transaction);
                 if (insertedOrderId > 0)
@@ -260,11 +270,26 @@ namespace HoangCuongSneaker.Repository.Admin.Implementation
                     }
                     else
                     {
-                        // update bill price of order
+                        // update quantity of each product inventory
+                        int productInventoryUpdateCount = 0;
+                        foreach (var item in orderItemsResult)
+                        {
+                            var productInventory = await _productInventoryRepository.Get(item.ProductInventoryId);
+                            if (productInventory is not null) productInventory.Quantity -= item.Quantity;
+                            else throw new Exception("Không tìm thấy sản phẩm");
+                            var productInventoryUpdate = _mapper.Map<ProductInventory>(productInventory);
+                            var updatedProductInventory = await _productInventoryRepository.Update(productInventoryUpdate, connection, transaction);
+                            if (updatedProductInventory is not null) productInventoryUpdateCount++;
+                        }
 
-                        transaction.Commit();
-                        var newlyInsertedOrder = await Get(insertedOrderId);
-                        return newlyInsertedOrder;
+                        if (productInventoryUpdateCount == orderItemsResult.Count)
+                        {
+
+                            transaction.Commit();
+                            var newlyInsertedOrder = await Get(insertedOrderId);
+                            return newlyInsertedOrder;
+                        }
+                        return null;
                     }
                 }
                 else

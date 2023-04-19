@@ -3,11 +3,13 @@ using HoangCuongSneaker.Core.Dto.Paging.Admin;
 using HoangCuongSneaker.Core.Model.Admin.SupplyBill;
 using HoangCuongSneaker.Repository;
 using HoangCuongSneaker.Repository.Admin.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HoangCuongSneaker.Api.Controllers.Admin
 {
+    [Authorize(Roles = "admin")]
     public class AdminSupplyBillsController : BaseController<SupplyBillDto>
     {
         protected ISupplyBillRepository _supplyBillRepository;
